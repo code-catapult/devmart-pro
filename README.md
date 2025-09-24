@@ -134,13 +134,14 @@ devmart-pro/
 
 ### **Prerequisites**
 
-- Node.js 18+ and npm/yarn
-- Docker and Docker Compose
-- Git for version control
+- **Node.js 18+** and npm/yarn
+- **Docker and Docker Compose** (for database services)
+- **Git** for version control
+- **VS Code** (recommended IDE with extensions)
 
-### **Development Setup**
+### **Quick Start**
 
-1. **Clone and Install**
+1. **Clone and Install Dependencies**
 
 ```bash
 git clone https://github.com/your-username/devmart-pro.git
@@ -148,31 +149,115 @@ cd devmart-pro
 npm install
 ```
 
-2. **Environment Configuration**
+2. **Environment Setup**
 
 ```bash
+# Copy environment template
 cp .env.example .env.local
-# Configure your database and authentication secrets
+
+# Configure required environment variables:
+# DATABASE_URL="postgresql://postgres:password@localhost:5432/devmart"
+# NEXTAUTH_SECRET="your-secret-key-here"
+# NEXTAUTH_URL="http://localhost:3000"
+# REDIS_URL="redis://localhost:6379"
 ```
 
-3. **Start Development Environment**
+3. **Development Environment**
 
 ```bash
-# Start database containers
+# Install dependencies for web app
+cd apps/web
+npm install
+cd ../..
+
+# Start database containers (PostgreSQL + Redis)
 docker-compose up -d
 
 # Run database migrations
+cd apps/web
 npx prisma migrate dev
+npx prisma db push
 
-# Start the development server
-npm run dev
+# Generate Prisma client
+npx prisma generate
 ```
 
-4. **Verify Setup**
+4. **Start Development Server**
 
-- Visit `http://localhost:3000` for the application
-- Access `http://localhost:3000/api/auth/signin` for authentication
-- Check database at `postgresql://localhost:5432/devmart`
+```bash
+# From project root - starts all services via Turbo
+npm run dev
+
+# OR start individual services:
+cd apps/web && npm run dev  # Next.js app only
+```
+
+### **Available Scripts**
+
+**Root Level (Turbo orchestrated):**
+
+```bash
+npm run dev          # Start all development servers
+npm run build        # Build all packages
+npm run lint         # Lint all packages
+npm run format       # Format code with Prettier
+npm run type-check   # TypeScript checking across all packages
+```
+
+**App Level (apps/web):**
+
+```bash
+cd apps/web
+npm run dev          # Start Next.js development server
+npm run build        # Build Next.js application
+npm run start        # Start production server
+npm run lint         # Lint Next.js app only
+npm run type-check   # TypeScript checking for app
+npm test             # Run Jest tests
+npm run test:watch   # Run tests in watch mode
+npm run test:coverage # Generate coverage report
+```
+
+### **Development Workflow**
+
+1. **Feature Development**
+
+```bash
+# Create feature branch from develop
+git checkout develop
+git checkout -b feature/your-feature-name
+
+# Make changes and commit
+git add .
+git commit -m "feat: implement your feature"
+
+# Push and create pull request
+git push origin feature/your-feature-name
+```
+
+2. **Code Quality Checks**
+
+```bash
+# Pre-commit hooks automatically run:
+# - ESLint with auto-fix
+# - Prettier formatting
+# - TypeScript checking
+
+# Manual quality checks:
+npm run lint         # Check linting
+npm run format       # Format code
+npm run type-check   # Verify TypeScript
+npm test             # Run test suite
+```
+
+3. **Verification Checklist**
+
+- ✅ Next.js app running on `http://localhost:3000`
+- ✅ Database accessible via Prisma Studio: `npx prisma studio`
+- ✅ All tests passing: `npm test`
+- ✅ Linting passes: `npm run lint`
+- ✅ Build succeeds: `npm run build`
+- ✅ TypeScript checking: `npm run type-check`
 
 ## 📊 Project Metrics
 
