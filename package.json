@@ -15,8 +15,8 @@
     "type-check": "turbo run type-check"
   },
   "lint-staged": {
-    "**/*.{js,jsx,ts,tsx}": [
-      "eslint --fix",
+    "apps/web/**/*.{js,jsx,ts,tsx}": [
+      "cd apps/web && npx eslint --fix",
       "prettier --write"
     ],
     "**/*.{json,md,yml,yaml}": [
