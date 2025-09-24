@@ -1,17 +1,17 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
   typedRoutes: true,
   images: {
-    domains: ["localhost"],
+    domains: ['localhost'],
     remotePatterns: [
       {
-        protocol: "https",
-        hostname: "**.amazonaws.com",
+        protocol: 'https',
+        hostname: '**.amazonaws.com',
       },
     ],
   },
-  transpilePackages: ["@repo/ui", "@repo/shared"],
-};
+  transpilePackages: ['@repo/ui', '@repo/shared'],
+}
 
-export default nextConfig;
+export default nextConfig
