@@ -39,6 +39,9 @@ git checkout -b task/DEV-126-configure-eslint
 
 ### Jira Smart Commit Commands
 
+**General Format**
+git commit -m "DEV-123 Task 1: Initialize monorepo structure with Turbo"
+
 **Transition tickets**
 git commit -m "DEV-123 #in-progress Add user authentication"
 git commit -m "DEV-123 #done Fix login validation #time 2h"

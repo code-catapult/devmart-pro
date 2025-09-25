@@ -1,14 +1,4 @@
-# Test Code Quality and Setup
-
-## Test linting (from apps/web directory)
-
-cd apps/web
-npm run lint
-
-## Test formatting (from root directory)
-
-cd ../..
-npm run format
+# Project Commands and Scripts
 
 ## Available Scripts
 
@@ -28,3 +18,11 @@ npm run format
 - \`npm run lint\` - Lint Next.js app only
 - \`npm run type-check\` - TypeScript checking for Next.js app
 - \`npm test\` - Run Jest tests for Next.js app
+
+## Tests
+
+- \`npm test\` - Runs Jest test suite once and exits
+- \`npm run test:db\` - Runs the database test script
+- \`npm run test:watch\` - Runs Jest tests in watch mode, re-running tests when files change
+- \`npm run test:coverage\` - Generates code coverage reports showing testing completeness
+- - \`npm run test:ci\` - Optimized for continuous integration with coverage and no interactivity
