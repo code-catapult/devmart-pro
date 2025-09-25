@@ -1,6 +1,5 @@
 // Primary router for server
 // All routes added in /api/routers should be manually added here
-
 import { createTRPCRouter } from './trpc'
 import { healthRouter } from './routers/health'
 

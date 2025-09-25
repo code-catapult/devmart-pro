@@ -17,9 +17,11 @@ export default function HomePage() {
 
   return (
     <div className="p-8">
-      <h1 className="text-2xl font-bold mb-4">tRPC Test</h1>
+      <h1 className="text-4xl font-bold mb-4 text-blue-500">tRPC Test</h1>
       <p>Ping: {ping?.message}</p>
-      <p>Echo: {echo?.echo}</p>
+      <p>{ping?.timestamp}</p>
+      <br />
+      <h2 className="text-2xl font-semibold">Echo: {echo?.echo}</h2>
     </div>
   )
 }
