@@ -1,8 +1,8 @@
 import { initTRPC } from '@trpc/server'
 import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch'
-import { z } from 'zod'
 
 // Create context for tRPC requests
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const createTRPCContext = (_opts: FetchCreateContextFnOptions) => {
   return {
     // Add auth, database, etc. here
