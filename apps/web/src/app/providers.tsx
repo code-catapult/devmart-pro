@@ -5,6 +5,7 @@ import { httpBatchLink } from '@trpc/client'
 import { useState } from 'react'
 import { api } from '~/utils/api'
 import { StoreProvider } from '~/store/StoreProvider'
+import { SessionProvider } from '~/components/SessionProvider'
 
 function getBaseUrl() {
   if (typeof window !== 'undefined') return ''
@@ -31,7 +32,9 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
   return (
     <api.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
-        <StoreProvider>{children}</StoreProvider>
+        <SessionProvider>
+          <StoreProvider>{children}</StoreProvider>
+        </SessionProvider>
       </QueryClientProvider>
     </api.Provider>
   )

@@ -3,6 +3,7 @@
 import { api } from '~/utils/api'
 import { useAppSelector, useAppDispatch } from '~/store'
 import { setTheme } from '~/store/slices/appSlice'
+import { useSession, signIn, signOut } from 'next-auth/react'
 
 export default function HomePage() {
   const { data: ping, isLoading } = api.health.ping.useQuery()
@@ -12,6 +13,8 @@ export default function HomePage() {
 
   const { theme, isLoading: appLoading } = useAppSelector((state) => state.app)
   const dispatch = useAppDispatch()
+
+  const { data: session, status } = useSession()
 
   const toggleTheme = () => {
     dispatch(setTheme(theme === 'light' ? 'dark' : 'light'))
@@ -43,6 +46,30 @@ export default function HomePage() {
         >
           Toggle Theme
         </button>
+      </div>
+
+      {/* Authentication Test */}
+      <div className="mb-6">
+        <h2 className="text-lg font-semibold mb-2">Authentication System</h2>
+        <p>Status: {status}</p>
+        {session ? (
+          <div>
+            <p>Signed in as: {session.user?.email}</p>
+            <button
+              onClick={() => signOut()}
+              className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+            >
+              Sign Out
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => signIn()}
+            className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+          >
+            Sign In
+          </button>
+        )}
       </div>
     </div>
   )
