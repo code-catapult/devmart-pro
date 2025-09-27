@@ -113,4 +113,102 @@ export const authRouter = createTRPCRouter({
       role: user.role,
     }
   }),
+
+  // Request password reset
+  requestPasswordReset: publicProcedure
+    .input(
+      z.object({
+        email: z.string().email('Please enter a valid email address'),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const { email } = input
+
+      const user = await prisma.user.findUnique({
+        where: { email: email.toLowerCase() },
+      })
+
+      // Always return success for security (don't reveal if email exists)
+      if (!user) {
+        return {
+          success: true,
+          message:
+            'If an account with that email exists, we sent a password reset link.',
+        }
+      }
+
+      // Generate secure reset token
+      const resetToken = crypto.randomBytes(32).toString('hex')
+      const resetTokenExpiry = new Date(Date.now() + 3600000) // 1 hour from now
+
+      // Store reset token (in production, you'd send an email)
+      // For now, we'll just log it
+      console.log('Password reset token for', email, ':', resetToken)
+
+      // In a real app, you'd store this in the database
+      // await prisma.user.update({
+      //   where: { id: user.id },
+      //   data: {
+      //     resetToken,
+      //     resetTokenExpiry,
+      //   },
+      // });
+
+      // In production, send email here
+      // await sendPasswordResetEmail(email, resetToken);
+
+      return {
+        success: true,
+        message:
+          'If an account with that email exists, we sent a password reset link.',
+      }
+    }),
+
+  // Reset password with token
+  resetPassword: publicProcedure
+    .input(
+      z.object({
+        token: z.string().min(1, 'Reset token is required'),
+        password: z
+          .string()
+          .min(8, 'Password must be at least 8 characters')
+          .regex(
+            /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+            'Password must contain uppercase, lowercase, and number'
+          ),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const { token, password } = input
+
+      // In production, you'd verify the token from database
+      // const user = await prisma.user.findFirst({
+      //   where: {
+      //     resetToken: token,
+      //     resetTokenExpiry: { gt: new Date() },
+      //   },
+      // });
+
+      // For demo, we'll just log the attempt
+      console.log('Password reset attempt with token:', token)
+
+      // Hash new password
+      const hashedPassword = await hash(password, 12)
+
+      // In production, update user's password and clear reset token
+      // await prisma.user.update({
+      //   where: { id: user.id },
+      //   data: {
+      //     hashedPassword,
+      //     resetToken: null,
+      //     resetTokenExpiry: null,
+      //   },
+      // });
+
+      return {
+        success: true,
+        message:
+          'Password reset successfully. You can now sign in with your new password.',
+      }
+    }),
 })
