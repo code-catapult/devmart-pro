@@ -1,14 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
-// generator client {
-//   provider = "prisma-client-js"
-//   output   = "../generated/prisma"
-// }
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -18,26 +7,42 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Basic models for foundation - will be expanded in Story 1.2
-model HealthCheck {
-  id        Int      @id @default(autoincrement())
-  status    String   @default("ok")
-  createdAt DateTime @default(now()) @map("created_at")
-
-  @@map("health_check")
+// Enum definitions
+enum Role {
+  USER
+  ADMIN
 }
 
-// User model foundation for NextAuth.js
-model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+enum ProductStatus {
+  ACTIVE
+  INACTIVE
+  DISCONTINUED
+}
 
-  // User can have many account records
-  accounts Account[]
-  sessions Session[]
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+// Core User model for authentication and user management
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified DateTime? @map("email_verified")
+  name          String?
+  role          Role      @default(USER)
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  // Relationships
+  accounts  Account[]
+  sessions  Session[]
+  orders    Order[]
+  cartItems CartItem[]
+  reviews   Review[]
 
   @@map("users")
 }
@@ -80,4 +85,138 @@ model VerificationToken {
 
   @@unique([identifier, token])
   @@map("verification_tokens")
+}
+
+// E-commerce Category model with hierarchical support
+model Category {
+  id          String  @id @default(cuid())
+  name        String
+  slug        String  @unique
+  description String?
+  imageUrl    String? @map("image_url")
+  parentId    String? @map("parent_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Self-referential relationships for hierarchical categories
+  parent   Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryHierarchy")
+
+  // Products in this category
+  products Product[]
+
+  @@map("categories")
+}
+
+// Product model for e-commerce catalog
+model Product {
+  id          String        @id @default(cuid())
+  name        String
+  slug        String        @unique
+  description String?
+  price       Int           // Stored in cents for precision
+  comparePrice Int?         @map("compare_price") // Optional compare-at price
+  inventory   Int           @default(0)
+  images      String[]      // Array of image URLs
+  status      ProductStatus @default(ACTIVE)
+  categoryId  String        @map("category_id")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  // Relationships
+  category  Category    @relation(fields: [categoryId], references: [id])
+  orderItems OrderItem[]
+  cartItems CartItem[]
+  reviews   Review[]
+
+  // Indexes for performance
+  @@index([categoryId])
+  @@index([slug])
+  @@index([status])
+  @@map("products")
+}
+
+// Order model for purchase tracking
+model Order {
+  id            String      @id @default(cuid())
+  orderNumber   String      @unique @map("order_number") // Human-readable order number
+  userId        String      @map("user_id")
+  status        OrderStatus @default(PENDING)
+  subtotal      Int         // Amount in cents
+  tax           Int         @default(0) // Tax amount in cents
+  shipping      Int         @default(0) // Shipping cost in cents
+  total         Int         // Total amount in cents
+  stripePaymentIntentId String? @map("stripe_payment_intent_id")
+
+  // Shipping address stored as JSON for flexibility
+  shippingAddress Json @map("shipping_address")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  user       User        @relation(fields: [userId], references: [id])
+  orderItems OrderItem[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([orderNumber])
+  @@map("orders")
+}
+
+// Order items for tracking products in orders
+model OrderItem {
+  id       String @id @default(cuid())
+  orderId  String @map("order_id")
+  productId String @map("product_id")
+  quantity Int
+  price    Int    // Historical price at time of order (in cents)
+
+  // Relationships
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@index([orderId])
+  @@index([productId])
+  @@map("order_items")
+}
+
+// Shopping cart persistence
+model CartItem {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  productId String   @map("product_id")
+  quantity  Int
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  // Unique constraint to prevent duplicate cart items
+  @@unique([userId, productId])
+  @@index([userId])
+  @@map("cart_items")
+}
+
+// Product reviews for customer feedback
+model Review {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  productId String   @map("product_id")
+  rating    Int      // 1-5 star rating
+  comment   String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  // User can only review each product once
+  @@unique([userId, productId])
+  @@index([productId])
+  @@index([rating])
+  @@map("reviews")
 }

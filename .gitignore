@@ -50,3 +50,7 @@ coverage/
 # Docker volumes
 postgres_data/
 redis_data/
+
+# Database files
+*.db
+*.sqlite
