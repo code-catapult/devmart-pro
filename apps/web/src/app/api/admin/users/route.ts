@@ -6,7 +6,6 @@ import {
 } from '@/lib/middleware/auth-middleware'
 import { prisma } from '@/lib/prisma'
 import { Role } from '@prisma/client'
-import { z } from 'zod'
 
 // GET /api/admin/users
 async function getAllUsers(req: AuthenticatedRequest) {
