@@ -7,7 +7,12 @@ import { Role } from '@prisma/client'
 import '~/types/auth'
 
 export const authOptions: NextAuthOptions = {
+  // Use Prisma adapter for database sessions
   adapter: PrismaAdapter(prisma),
+  session: {
+    strategy: 'database', // Store sessions in PostgreSQL
+    maxAge: 24 * 60 * 60, // 24 hours
+  },
   providers: [
     CredentialsProvider({
       name: 'credentials',
@@ -37,8 +42,7 @@ export const authOptions: NextAuthOptions = {
           throw new Error('No user found with this email address')
         }
 
-        // For now, we'll check if the user exists and create a simple auth
-        // In production, you would verify the hashed password
+        // In production, verify password hash
         // const isPasswordValid = await compare(credentials.password, user.hashedPassword);
         // if (!isPasswordValid) {
         //   throw new Error('Invalid password');
@@ -54,42 +58,43 @@ export const authOptions: NextAuthOptions = {
       },
     }),
   ],
-  session: {
-    strategy: 'jwt',
-    maxAge: 24 * 60 * 60, // 24 hours
-  },
-  jwt: {
-    maxAge: 24 * 60 * 60, // 24 hours
-  },
   pages: {
     signIn: '/auth/signin',
     signUp: '/auth/signup',
     error: '/auth/error',
   },
   callbacks: {
-    async jwt({ token, user }) {
-      // Persist user data in JWT token
+    async session({ session, user }) {
+      // Add user ID and role to session
       if (user) {
-        token.id = user.id
-        token.role = user.role
-      }
-      return token
-    },
-    async session({ session, token }) {
-      // Make user data available in session
-      if (token) {
-        session.user.id = token.id as string
-        session.user.role = token.role as Role
+        session.user.id = user.id
+        session.user.role = (user as any).role || Role.USER
       }
       return session
+    },
+    async signIn({ user, account }) {
+      // Custom sign-in logic
+      console.log('User signing in:', user.email)
+      return true
     },
   },
   events: {
     async signIn(message) {
       console.log('User signed in:', message.user.email)
+
+      // Update last login time in database
+      if (message.user.id) {
+        await prisma.user.update({
+          where: { id: message.user.id },
+          data: { updatedAt: new Date() },
+        })
+      }
     },
     async signOut(message) {
       console.log('User signed out')
+    },
+    async createUser(message) {
+      console.log('New user created:', message.user.email)
     },
   },
   debug: process.env.NODE_ENV === 'development',
