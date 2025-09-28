@@ -1,17 +1,19 @@
 import { configureStore } from '@reduxjs/toolkit'
 import { useDispatch, useSelector, TypedUseSelectorHook } from 'react-redux'
 import appSlice from './slices/appSlice'
+import authSlice from './slices/authSlice'
 
 export const store = configureStore({
   reducer: {
     app: appSlice,
-    // auth: authSlice,
+    auth: authSlice,
     // cart: cartSlice,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
         ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE'],
+        ignoredPaths: ['auth.user.emailVerified'],
       },
     }),
   devTools: process.env.NODE_ENV !== 'production',

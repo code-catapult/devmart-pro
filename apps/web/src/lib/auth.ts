@@ -68,7 +68,7 @@ export const authOptions: NextAuthOptions = {
       // Add user ID and role to session
       if (user) {
         session.user.id = user.id
-        session.user.role = (user as any).role || Role.USER
+        session.user.role = user.role || Role.USER
       }
       return session
     },

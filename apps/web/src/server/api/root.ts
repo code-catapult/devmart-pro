@@ -3,10 +3,12 @@
 import { createTRPCRouter } from './trpc'
 import { healthRouter } from './routers/health'
 import { authRouter } from './routers/auth'
+import { userRouter } from './routers/user'
 
 export const appRouter = createTRPCRouter({
   health: healthRouter,
   auth: authRouter,
+  user: userRouter,
 })
 
 // Export type definition of API

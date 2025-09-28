@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { hash } from 'bcryptjs'
 import { createTRPCRouter, publicProcedure } from '../trpc'
-import { prisma } from '@/lib/prisma'
+import { prisma } from '~/lib/prisma'
 import { Role } from '@prisma/client'
 
 // Input validation schemas
@@ -118,7 +118,7 @@ export const authRouter = createTRPCRouter({
   requestPasswordReset: publicProcedure
     .input(
       z.object({
-        email: z.string().email('Please enter a valid email address'),
+        email: z.email('Please enter a valid email address'),
       })
     )
     .mutation(async ({ input }) => {
