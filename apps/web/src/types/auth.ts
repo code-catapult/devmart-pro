@@ -1,6 +1,5 @@
 import { DefaultSession, DefaultUser } from 'next-auth'
 import { Role } from '@prisma/client'
-import { JWT } from 'next-auth/jwt'
 
 // Extend the built-in next-auth types
 

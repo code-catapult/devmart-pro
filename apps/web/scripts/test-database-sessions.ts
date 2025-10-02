@@ -2,35 +2,26 @@ import { prisma } from '../src/lib/prisma'
 
 async function testDatabaseSessions() {
   try {
-    console.log('🔗 Testing database session integration...')
+    console.log('🔗 Testing database authentication integration...')
 
     // Test database connection
     const userCount = await prisma.user.count()
     console.log(`✅ Database connected. Users: ${userCount}`)
 
-    // Test session tables exist and functionality
-    console.log('📊 Testing session tables...')
-    const sessionCount = await prisma.session.count()
-    console.log(`✅ Session table accessible. Sessions: ${sessionCount}`)
+    // Test authentication tables exist and functionality
+    console.log('📊 Testing authentication tables...')
 
     // Test account table
     const accountCount = await prisma.account.count()
     console.log(`✅ Account table accessible. Accounts: ${accountCount}`)
 
-    // Test verification token table
-    const verificationTokenCount = await prisma.verificationToken.count()
-    console.log(
-      `✅ Verification token table accessible. Tokens: ${verificationTokenCount}`
-    )
-
-    // If there are sessions, show some details (without sensitive data)
-    if (sessionCount > 0) {
-      const recentSessions = await prisma.session.findMany({
+    // If there are accounts, show some details (without sensitive data)
+    if (accountCount > 0) {
+      const recentAccounts = await prisma.account.findMany({
         take: 3,
-        orderBy: { expires: 'desc' },
         select: {
-          userId: true,
-          expires: true,
+          provider: true,
+          type: true,
           user: {
             select: {
               email: true,
@@ -39,17 +30,40 @@ async function testDatabaseSessions() {
           },
         },
       })
-      console.log('📋 Recent sessions:')
-      recentSessions.forEach((session, index) => {
+      console.log('📋 Recent accounts:')
+      recentAccounts.forEach((account, index) => {
         console.log(
-          `  ${index + 1}. User: ${session.user.email} | Expires: ${session.expires}`
+          `  ${index + 1}. User: ${account.user.email} | Provider: ${account.provider} | Type: ${account.type}`
         )
       })
     }
 
-    console.log('✅ Database session integration working!')
+    // Show user authentication info
+    if (userCount > 0) {
+      const users = await prisma.user.findMany({
+        take: 3,
+        select: {
+          email: true,
+          name: true,
+          role: true,
+          emailVerified: true,
+          createdAt: true,
+        },
+      })
+      console.log('📋 Recent users:')
+      users.forEach((user, index) => {
+        console.log(
+          `  ${index + 1}. Email: ${user.email} | Role: ${user.role} | Verified: ${user.emailVerified ? 'Yes' : 'No'}`
+        )
+      })
+    }
+
+    console.log('✅ Database authentication integration working!')
+    console.log(
+      'ℹ️  Note: Using JWT + Redis for session management (not database sessions)'
+    )
   } catch (error) {
-    console.error('❌ Database session test failed:', error)
+    console.error('❌ Database authentication test failed:', error)
   } finally {
     await prisma.$disconnect()
   }
