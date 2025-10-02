@@ -63,31 +63,37 @@ async function main() {
     },
   })
 
-  // Create admin user
+  // Create admin user with hashed password
   console.log('👤 Creating users...')
+  const adminPassword = await hash('Admin123!', 12) // Demo password
   const adminUser = await prisma.user.create({
     data: {
       email: 'admin@devmart.com',
       name: 'Admin User',
+      passwordHash: adminPassword,
       role: Role.ADMIN,
       emailVerified: new Date(),
     },
   })
 
-  // Create sample customers
+  // Create sample customers with hashed passwords
+  const customer1Password = await hash('Customer123!', 12) // Demo password
   const customer1 = await prisma.user.create({
     data: {
       email: 'john@example.com',
       name: 'John Doe',
+      passwordHash: customer1Password,
       role: Role.USER,
       emailVerified: new Date(),
     },
   })
 
+  const customer2Password = await hash('Customer123!', 12) // Demo password
   const customer2 = await prisma.user.create({
     data: {
       email: 'jane@example.com',
       name: 'Jane Smith',
+      passwordHash: customer2Password,
       role: Role.USER,
       emailVerified: new Date(),
     },

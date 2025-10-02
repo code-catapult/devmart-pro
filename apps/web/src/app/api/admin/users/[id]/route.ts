@@ -18,9 +18,9 @@ async function updateUser(req: AuthenticatedRequest, context?: RouteContext) {
     const body = await req.json()
 
     const updateSchema = z.object({
-      role: z.nativeEnum(Role),
+      role: z.enum(Role),
       name: z.string().min(1).optional(),
-      email: z.string().email().optional(),
+      email: z.email().optional(),
     })
 
     const { role, name, email } = updateSchema.parse(body)

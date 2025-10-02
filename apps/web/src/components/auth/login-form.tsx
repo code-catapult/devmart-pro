@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import type { Route } from 'next'
 import { signIn, getSession } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -79,9 +80,9 @@ export function LoginForm() {
 
         // Redirect based on user role
         if (session?.user?.role === 'ADMIN') {
-          router.push('/admin/dashboard')
+          router.push('/admin/dashboard' as Route)
         } else {
-          router.push(redirectTo)
+          router.push(redirectTo as Route)
         }
       }
     } catch (error) {
@@ -95,7 +96,7 @@ export function LoginForm() {
   const successMessage = searchParams?.get('message')
 
   return (
-    <Card className="w-full max-w-md mx-auto">
+    <Card className="w-full max-w-md mx-auto bg-blue-300">
       <CardHeader>
         <CardTitle>Sign In</CardTitle>
         <CardDescription>Welcome back to DevMart Pro</CardDescription>

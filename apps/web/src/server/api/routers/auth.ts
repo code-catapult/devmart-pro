@@ -3,6 +3,7 @@ import { hash } from 'bcryptjs'
 import { createTRPCRouter, publicProcedure } from '../trpc'
 import { prisma } from '~/lib/prisma'
 import { Role } from '@prisma/client'
+import crypto from 'crypto'
 
 // Input validation schemas
 const registerSchema = z.object({
@@ -23,11 +24,6 @@ const registerSchema = z.object({
     .max(100, 'Name must be less than 100 characters'),
 })
 
-const loginSchema = z.object({
-  email: z.email('Please enter a valid email address').toLowerCase(),
-  password: z.string().min(1, 'Password is required'),
-})
-
 export const authRouter = createTRPCRouter({
   // User registration
   register: publicProcedure
@@ -45,7 +41,7 @@ export const authRouter = createTRPCRouter({
       }
 
       // Hash password
-      const hashedPassword = await hash(password, 12)
+      const passwordHash = await hash(password, 12)
 
       try {
         // Create user
@@ -53,7 +49,7 @@ export const authRouter = createTRPCRouter({
           data: {
             email,
             name,
-            // Note: We'll add hashedPassword field to schema in next step
+            passwordHash,
             role: Role.USER,
           },
         })
@@ -88,32 +84,6 @@ export const authRouter = createTRPCRouter({
       }
     }),
 
-  // Verify user exists for login
-  verifyUser: publicProcedure.input(loginSchema).mutation(async ({ input }) => {
-    const { email, password } = input
-
-    const user = await prisma.user.findUnique({
-      where: { email },
-    })
-
-    if (!user) {
-      throw new Error('No account found with this email address')
-    }
-
-    // In production, verify password hash here
-    // const isValid = await compare(password, user.hashedPassword);
-    // if (!isValid) {
-    //   throw new Error('Invalid password');
-    // }
-
-    return {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      role: user.role,
-    }
-  }),
-
   // Request password reset
   requestPasswordReset: publicProcedure
     .input(
@@ -141,20 +111,23 @@ export const authRouter = createTRPCRouter({
       const resetToken = crypto.randomBytes(32).toString('hex')
       const resetTokenExpiry = new Date(Date.now() + 3600000) // 1 hour from now
 
-      // Store reset token (in production, you'd send an email)
-      // For now, we'll just log it
+      // Store reset token in database
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          resetToken,
+          resetTokenExpiry,
+        },
+      })
+
+      // Store reset token (for development, log it)
       console.log('Password reset token for', email, ':', resetToken)
+      console.log(
+        'Reset URL:',
+        `${process.env.NEXTAUTH_URL}/auth/reset-password?token=${resetToken}`
+      )
 
-      // In a real app, you'd store this in the database
-      // await prisma.user.update({
-      //   where: { id: user.id },
-      //   data: {
-      //     resetToken,
-      //     resetTokenExpiry,
-      //   },
-      // });
-
-      // In production, send email here
+      // TODO: In production, send email here
       // await sendPasswordResetEmail(email, resetToken);
 
       return {
@@ -181,29 +154,32 @@ export const authRouter = createTRPCRouter({
     .mutation(async ({ input }) => {
       const { token, password } = input
 
-      // In production, you'd verify the token from database
-      // const user = await prisma.user.findFirst({
-      //   where: {
-      //     resetToken: token,
-      //     resetTokenExpiry: { gt: new Date() },
-      //   },
-      // });
+      // Verify the token from database
+      const user = await prisma.user.findFirst({
+        where: {
+          resetToken: token,
+          resetTokenExpiry: { gt: new Date() },
+        },
+      })
 
-      // For demo, we'll just log the attempt
-      console.log('Password reset attempt with token:', token)
+      if (!user) {
+        throw new Error(
+          'Invalid or expired reset token. Please request a new password reset.'
+        )
+      }
 
       // Hash new password
-      const hashedPassword = await hash(password, 12)
+      const passwordHash = await hash(password, 12)
 
-      // In production, update user's password and clear reset token
-      // await prisma.user.update({
-      //   where: { id: user.id },
-      //   data: {
-      //     hashedPassword,
-      //     resetToken: null,
-      //     resetTokenExpiry: null,
-      //   },
-      // });
+      // Update user's password and clear reset token
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          passwordHash,
+          resetToken: null,
+          resetTokenExpiry: null,
+        },
+      })
 
       return {
         success: true,

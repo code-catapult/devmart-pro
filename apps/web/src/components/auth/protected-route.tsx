@@ -4,8 +4,7 @@ import { useSession } from 'next-auth/react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import { Role } from '@prisma/client'
-import path from 'path'
-
+import type { Route } from 'next'
 interface ProtectedRouteProps {
   children: React.ReactNode
   requireRole?: Role
@@ -27,14 +26,14 @@ export function ProtectedRoute({
     if (!session) {
       // Not authenticated
       router.push(
-        `${fallbackUrl}?callbackUrl=${encodeURIComponent(pathname)}` as any
+        `${fallbackUrl}?callbackUrl=${encodeURIComponent(pathname)}` as Route
       )
       return
     }
 
     if (requireRole && session.user.role !== requireRole) {
       // Authenticated but insufficient permissions
-      router.push('/unauthorized')
+      router.push('/unauthorized' as Route)
       return
     }
   }, [session, status, router, requireRole, fallbackUrl, pathname])

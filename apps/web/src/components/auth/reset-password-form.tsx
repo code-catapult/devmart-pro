@@ -28,7 +28,8 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
 
   const resetMutation = api.auth.resetPassword.useMutation({
     onSuccess: (data) => {
-      router.push('/auth/signin?message=' + encodeURIComponent(data.message))
+      const message = encodeURIComponent(data.message)
+      router.push(`/auth/signin?message=${message}` as Route)
     },
     onError: (error) => {
       setErrors({ general: error.message })
@@ -130,9 +131,9 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
           <Button
             type="submit"
             className="w-full"
-            disabled={resetMutation.isLoading}
+            disabled={resetMutation.isPending}
           >
-            {resetMutation.isLoading ? 'Resetting...' : 'Reset Password'}
+            {resetMutation.isPending ? 'Resetting...' : 'Reset Password'}
           </Button>
         </form>
       </CardContent>

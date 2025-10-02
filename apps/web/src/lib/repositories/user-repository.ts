@@ -3,10 +3,16 @@ import { Role } from '@prisma/client'
 
 export class UserRepository {
   // Create new user
-  static async createUser(data: { email: string; name?: string; role?: Role }) {
+  static async createUser(data: {
+    email: string
+    passwordHash: string
+    name?: string
+    role?: Role
+  }) {
     return prisma.user.create({
       data: {
         email: data.email,
+        passwordHash: data.passwordHash,
         name: data.name,
         role: data.role || Role.USER,
       },
@@ -57,6 +63,14 @@ export class UserRepository {
     return prisma.user.update({
       where: { id: userId },
       data,
+    })
+  }
+
+  // Update user password (for password reset)
+  static async updatePassword(userId: string, passwordHash: string) {
+    return prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash },
     })
   }
 }

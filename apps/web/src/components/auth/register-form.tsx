@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { api } from '@/utils/api'
+import { Route } from 'next'
 
 export function RegisterForm() {
   const router = useRouter()
@@ -36,12 +37,13 @@ export function RegisterForm() {
       })
 
       if (result?.ok) {
-        router.push('/dashboard')
+        router.push('/dashboard' as Route)
       } else {
         // Registration succeeded but auto-login failed
         router.push(
-          '/auth/signin?message=' +
-            encodeURIComponent('Account created! Please sign in.')
+          `/auth/signin?message=${encodeURIComponent(
+            'Account created! Please sign in.'
+          )}` as Route
         )
       }
     },
@@ -132,7 +134,7 @@ export function RegisterForm() {
   }
 
   return (
-    <Card className="w-full max-w-md mx-auto">
+    <Card className="w-full max-w-md mx-auto bg-blue-300">
       <CardHeader>
         <CardTitle>Create Account</CardTitle>
         <CardDescription>Join DevMart Pro to start shopping</CardDescription>

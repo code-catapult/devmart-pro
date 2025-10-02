@@ -1,6 +1,6 @@
 import { DefaultSession, DefaultUser } from 'next-auth'
-
 import { Role } from '@prisma/client'
+import { JWT } from 'next-auth/jwt'
 
 // Extend the built-in next-auth types
 
@@ -20,8 +20,13 @@ declare module 'next-auth' {
   }
 }
 
-// Note: JWT types removed since we use database sessions with PrismaAdapter
-// The JWT module declaration is only needed for JWT session strategy
+declare module 'next-auth/jwt' {
+  interface JWT {
+    id: string
+    role: Role
+    email?: string | null
+  }
+}
 
 export interface AuthUser {
   id: string

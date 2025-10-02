@@ -1,18 +1,11 @@
 import { NextAuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
-import { PrismaAdapter } from '@next-auth/prisma-adapter'
 import { compare } from 'bcryptjs'
 import { prisma } from './prisma'
 import { Role } from '@prisma/client'
 import '~/types/auth'
 
 export const authOptions: NextAuthOptions = {
-  // Use Prisma adapter for database sessions
-  adapter: PrismaAdapter(prisma),
-  session: {
-    strategy: 'database', // Store sessions in PostgreSQL
-    maxAge: 24 * 60 * 60, // 24 hours
-  },
   providers: [
     CredentialsProvider({
       name: 'credentials',
@@ -39,14 +32,24 @@ export const authOptions: NextAuthOptions = {
         })
 
         if (!user) {
-          throw new Error('No user found with this email address')
+          throw new Error('Invalid email or password')
         }
 
-        // In production, verify password hash
-        // const isPasswordValid = await compare(credentials.password, user.hashedPassword);
-        // if (!isPasswordValid) {
-        //   throw new Error('Invalid password');
-        // }
+        // Check password hash before moving to bcrypt.compare
+        // Our schema has passwordHash as string | null for OAuth users
+        // bcryptjs compare function expects non-null strings
+        if (!user.passwordHash) {
+          throw new Error('Invalid email or password')
+        }
+
+        const isPasswordValid = await compare(
+          credentials.password,
+          user.passwordHash
+        )
+
+        if (!isPasswordValid) {
+          throw new Error('Invalid email or password')
+        }
 
         // Return user data for session
         return {
@@ -58,43 +61,44 @@ export const authOptions: NextAuthOptions = {
       },
     }),
   ],
+  session: {
+    strategy: 'jwt',
+    maxAge: 24 * 60 * 60, // 24 hours
+  },
+  jwt: {
+    maxAge: 24 * 60 * 60, // 24 hours
+  },
   pages: {
     signIn: '/auth/signin',
     signUp: '/auth/signup',
     error: '/auth/error',
   },
   callbacks: {
-    async session({ session, user }) {
-      // Add user ID and role to session
+    async jwt({ token, user }) {
+      // Persist user data in JWT token
       if (user) {
-        session.user.id = user.id
-        session.user.role = user.role || Role.USER
+        token.id = user.id
+        token.role = user.role
+        token.email = user.email?.toLowerCase()
+      }
+      return token
+    },
+    async session({ session, token }) {
+      // Make user data available in session
+      if (token && session.user) {
+        session.user.id = token.id as string
+        session.user.role = token.role as Role
+        session.user.email = token.email
       }
       return session
-    },
-    async signIn({ user, account }) {
-      // Custom sign-in logic
-      console.log('User signing in:', user.email)
-      return true
     },
   },
   events: {
     async signIn(message) {
       console.log('User signed in:', message.user.email)
-
-      // Update last login time in database
-      if (message.user.id) {
-        await prisma.user.update({
-          where: { id: message.user.id },
-          data: { updatedAt: new Date() },
-        })
-      }
     },
     async signOut(message) {
       console.log('User signed out')
-    },
-    async createUser(message) {
-      console.log('New user created:', message.user.email)
     },
   },
   debug: process.env.NODE_ENV === 'development',
