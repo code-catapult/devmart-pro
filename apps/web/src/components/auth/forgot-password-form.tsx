@@ -46,7 +46,7 @@ export function ForgotPasswordForm() {
 
   if (isSuccess) {
     return (
-      <Card className="w-full max-w-md mx-auto">
+      <Card className="w-full max-w-md mx-auto bg-blue-300">
         <CardHeader>
           <CardTitle>Check Your Email</CardTitle>
           <CardDescription>Password reset link sent</CardDescription>
@@ -58,7 +58,10 @@ export function ForgotPasswordForm() {
               link. Please check your email and follow the instructions.
             </AlertDescription>
           </Alert>
-          <Button asChild className="w-full mt-4">
+          <Button
+            asChild
+            className="w-full mt-4 bg-blue-100 text-gray-600 hover:bg-blue-200"
+          >
             <a href="/auth/signin">Back to Sign In</a>
           </Button>
         </CardContent>
@@ -67,7 +70,7 @@ export function ForgotPasswordForm() {
   }
 
   return (
-    <Card className="w-full max-w-md mx-auto">
+    <Card className="w-full max-w-md mx-auto bg-blue-300">
       <CardHeader>
         <CardTitle>Forgot Password?</CardTitle>
         <CardDescription>
@@ -101,10 +104,10 @@ export function ForgotPasswordForm() {
 
           <Button
             type="submit"
-            className="w-full"
-            disabled={resetMutation.isLoading}
+            className="w-full bg-blue-100 text-gray-600"
+            disabled={resetMutation.isPending}
           >
-            {resetMutation.isLoading ? 'Sending...' : 'Send Reset Link'}
+            {resetMutation.isPending ? 'Sending...' : 'Send Reset Link'}
           </Button>
 
           <div className="text-center text-sm text-gray-600">

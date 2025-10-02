@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import type { Route } from 'next'
 import { signIn, getSession } from 'next-auth/react'
@@ -25,6 +25,22 @@ export function LoginForm() {
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isLoading, setIsLoading] = useState(false)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+
+  // Show success message from URL and clear it after a delay
+  useEffect(() => {
+    const message = searchParams?.get('message')
+    if (message) {
+      setSuccessMessage(message)
+      // Remove the message from URL without page reload
+      router.replace('/auth/signin' as Route)
+      // Auto-dismiss after 5 seconds
+      const timer = setTimeout(() => {
+        setSuccessMessage(null)
+      }, 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [searchParams, router])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target
@@ -85,15 +101,12 @@ export function LoginForm() {
           router.push(redirectTo as Route)
         }
       }
-    } catch (error) {
+    } catch {
       setErrors({ general: 'An unexpected error occurred. Please try again.' })
     } finally {
       setIsLoading(false)
     }
   }
-
-  // Show success message from registration
-  const successMessage = searchParams?.get('message')
 
   return (
     <Card className="w-full max-w-md mx-auto bg-blue-300">
@@ -104,8 +117,18 @@ export function LoginForm() {
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           {successMessage && (
-            <Alert>
-              <AlertDescription>{successMessage}</AlertDescription>
+            <Alert className="relative">
+              <AlertDescription className="pr-8">
+                {successMessage}
+              </AlertDescription>
+              <button
+                type="button"
+                onClick={() => setSuccessMessage(null)}
+                className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+                aria-label="Dismiss message"
+              >
+                ✕
+              </button>
             </Alert>
           )}
 
@@ -178,7 +201,7 @@ export function LoginForm() {
           </Button>
 
           <div className="text-center text-sm text-gray-600">
-            Don't have an account?{' '}
+            Don&apos;t have an account?{' '}
             <a href="/auth/signup" className="text-blue-600 hover:underline">
               Sign Up
             </a>

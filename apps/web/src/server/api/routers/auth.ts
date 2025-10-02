@@ -4,6 +4,7 @@ import { createTRPCRouter, publicProcedure } from '../trpc'
 import { prisma } from '~/lib/prisma'
 import { Role } from '@prisma/client'
 import crypto from 'crypto'
+import { sendPasswordResetEmail } from '~/lib/email'
 
 // Input validation schemas
 const registerSchema = z.object({
@@ -120,15 +121,15 @@ export const authRouter = createTRPCRouter({
         },
       })
 
-      // Store reset token (for development, log it)
-      console.log('Password reset token for', email, ':', resetToken)
-      console.log(
-        'Reset URL:',
-        `${process.env.NEXTAUTH_URL}/auth/reset-password?token=${resetToken}`
-      )
-
-      // TODO: In production, send email here
-      // await sendPasswordResetEmail(email, resetToken);
+      // Send password reset email
+      try {
+        await sendPasswordResetEmail({ email, resetToken })
+        console.log('Password reset email sent to:', email)
+      } catch (error) {
+        console.error('Failed to send password reset email:', error)
+        // We won't throw error because we don't want to reveal if email exists
+        // In production, we'll log this to a monitoring service
+      }
 
       return {
         success: true,

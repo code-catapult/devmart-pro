@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { api } from '@/utils/api'
+import { Route } from 'next'
 
 interface ResetPasswordFormProps {
   token: string
@@ -79,7 +80,7 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
   }
 
   return (
-    <Card className="w-full max-w-md mx-auto">
+    <Card className="w-full max-w-md mx-auto bg-blue-300">
       <CardHeader>
         <CardTitle>Reset Password</CardTitle>
         <CardDescription>Enter your new password</CardDescription>
@@ -130,7 +131,7 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
 
           <Button
             type="submit"
-            className="w-full"
+            className="w-full bg-blue-200 hover:bg-blue-300 text-gray-700"
             disabled={resetMutation.isPending}
           >
             {resetMutation.isPending ? 'Resetting...' : 'Reset Password'}
