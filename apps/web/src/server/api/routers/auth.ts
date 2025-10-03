@@ -173,12 +173,14 @@ export const authRouter = createTRPCRouter({
       const passwordHash = await hash(password, 12)
 
       // Update user's password and clear reset token
+      // This will invalidate ALL sessions including the current one
       await prisma.user.update({
         where: { id: user.id },
         data: {
           passwordHash,
           resetToken: null,
           resetTokenExpiry: null,
+          lastPasswordChange: new Date(),
         },
       })
 

@@ -32,6 +32,7 @@ model User {
   id               String    @id @default(cuid())
   email            String    @unique
   passwordHash     String?   @map("password_hash")
+  lastPasswordChange DateTime? @map("last_password_change")
   emailVerified    DateTime? @map("email_verified")
   name             String?
   role             Role      @default(USER)

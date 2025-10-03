@@ -62,6 +62,7 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           name: user.name,
           role: user.role,
+          lastPasswordChange: user.lastPasswordChange,
         }
       },
     }),
@@ -100,19 +101,27 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id
         token.role = user.role
         token.email = user.email?.toLowerCase()
+        token.lastPasswordChange = user.lastPasswordChange
       }
 
-      // Handle token updates (e.g., profile changes, role changes, etc., will not trigger a log-out.)
+      // Handle token updates (e.g., profile changes, role changes, password changes, etc.)
       if (trigger === 'update' && token.id) {
-        // Optionally refresh user data from database
+        // Refresh user data from database
         const refreshedUser = await prisma.user.findUnique({
           where: { id: token.id as string },
-          select: { id: true, email: true, name: true, role: true },
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            role: true,
+            lastPasswordChange: true,
+          },
         })
 
         if (refreshedUser) {
           token.email = refreshedUser.email
           token.role = refreshedUser.role
+          token.lastPasswordChange = refreshedUser.lastPasswordChange
         }
       }
 
@@ -124,6 +133,7 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.id as string
         session.user.role = token.role as Role
         session.user.email = token.email as string
+        session.user.lastPasswordChange = token.lastPasswordChange
       }
       return session
     },

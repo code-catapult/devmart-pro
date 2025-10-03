@@ -70,7 +70,10 @@ export class UserRepository {
   static async updatePassword(userId: string, passwordHash: string) {
     return prisma.user.update({
       where: { id: userId },
-      data: { passwordHash },
+      data: {
+        passwordHash,
+        lastPasswordChange: new Date(),
+      },
     })
   }
 }

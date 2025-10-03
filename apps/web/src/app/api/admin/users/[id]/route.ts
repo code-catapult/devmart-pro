@@ -4,12 +4,16 @@ import {
   AuthenticatedRequest,
 } from '@/lib/middleware/auth-middleware'
 import { prisma } from '@/lib/prisma'
+import { UserRepository } from '@/lib/repositories/user-repository'
 import { Role } from '@prisma/client'
+import { hash } from 'bcryptjs'
 import { z } from 'zod'
 
 interface RouteContext {
   params: { id: string }
 }
+
+// Admin actions to update and delete users by ID
 
 // PUT /api/admin/users/[id]
 async function updateUser(req: AuthenticatedRequest, context?: RouteContext) {
@@ -18,12 +22,22 @@ async function updateUser(req: AuthenticatedRequest, context?: RouteContext) {
     const body = await req.json()
 
     const updateSchema = z.object({
-      role: z.enum(Role),
+      role: z.enum(['USER', 'ADMIN']).optional(),
       name: z.string().min(1).optional(),
       email: z.email().optional(),
+      resetPassword: z.boolean().optional(),
+      newPassword: z
+        .string()
+        .min(8, 'Password must be at least 8 characters')
+        .regex(
+          /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+          'Password must contain at least one uppercase letter, one lowercase letter, and one number'
+        )
+        .optional(),
     })
 
-    const { role, name, email } = updateSchema.parse(body)
+    const { role, name, email, resetPassword, newPassword } =
+      updateSchema.parse(body)
 
     // Prevent demoting the last admin
     if (role === Role.USER) {
@@ -44,6 +58,14 @@ async function updateUser(req: AuthenticatedRequest, context?: RouteContext) {
       }
     }
 
+    // Validate password reset request
+    if (resetPassword && !newPassword) {
+      return NextResponse.json(
+        { error: 'New password is required when resetting password' },
+        { status: 400 }
+      )
+    }
+
     // Check if email is already taken
     if (email) {
       const existingUser = await prisma.user.findFirst({
@@ -61,10 +83,18 @@ async function updateUser(req: AuthenticatedRequest, context?: RouteContext) {
       }
     }
 
+    // Handle password reset if requested
+    // This will invalidate ALL sessions for the target user
+    if (resetPassword && newPassword) {
+      const passwordHash = await hash(newPassword, 12)
+      await UserRepository.updatePassword(id, passwordHash)
+    }
+
+    // Update user data
     const updatedUser = await prisma.user.update({
       where: { id },
       data: {
-        role,
+        ...(role && { role }),
         ...(name && { name }),
         ...(email && { email: email.toLowerCase() }),
       },
@@ -78,7 +108,10 @@ async function updateUser(req: AuthenticatedRequest, context?: RouteContext) {
       },
     })
 
-    return NextResponse.json({ user: updatedUser })
+    return NextResponse.json({
+      user: updatedUser,
+      ...(resetPassword && { passwordReset: true }),
+    })
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(

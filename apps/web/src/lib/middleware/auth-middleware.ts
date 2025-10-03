@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { Role } from '@prisma/client'
 import { authOptions } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
 
 export interface AuthenticatedRequest extends NextRequest {
   user?: {
@@ -13,11 +14,11 @@ export interface AuthenticatedRequest extends NextRequest {
 }
 
 // Middleware to check if user is authenticated
-export async function withAuth<T = unknown>(
+export function withAuth<T = unknown>(
   handler: (req: AuthenticatedRequest, context?: T) => Promise<NextResponse>,
   options: { requireRole?: Role } = {}
 ) {
-  return async (req: NextRequest, context?: T) => {
+  return async (req: NextRequest, context?: T): Promise<NextResponse> => {
     try {
       // Use getServerSession for database sessions (compatible with PrismaAdapter)
       const session = await getServerSession(authOptions)
@@ -25,6 +26,41 @@ export async function withAuth<T = unknown>(
       if (!session || !session.user) {
         return NextResponse.json(
           { error: 'Authentication required' },
+          { status: 401 }
+        )
+      }
+
+      // Validate token hasn't been invalidated by password change
+      const user = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { lastPasswordChange: true },
+      })
+
+      const tokenPasswordChangeTime = session.user.lastPasswordChange
+      const dbPasswordChangeTime = user?.lastPasswordChange
+
+      // If password changed after token was issued, invalidate session
+      // Compare timestamps: if DB timestamp is newer than token timestamp, session is invalid
+      if (dbPasswordChangeTime && tokenPasswordChangeTime) {
+        const dbTime = new Date(dbPasswordChangeTime).getTime()
+        const tokenTime = new Date(tokenPasswordChangeTime).getTime()
+
+        if (dbTime > tokenTime) {
+          return NextResponse.json(
+            {
+              error:
+                'Session expired due to password change. Please sign in again.',
+            },
+            { status: 401 }
+          )
+        }
+      } else if (dbPasswordChangeTime && !tokenPasswordChangeTime) {
+        // Token doesn't have lastPasswordChange but DB does - old token
+        return NextResponse.json(
+          {
+            error:
+              'Session expired due to password change. Please sign in again.',
+          },
           { status: 401 }
         )
       }
@@ -45,7 +81,7 @@ export async function withAuth<T = unknown>(
         role: session.user.role,
       }
 
-      return handler(req as AuthenticatedRequest, context)
+      return await handler(req as AuthenticatedRequest, context)
     } catch (error) {
       console.error('Auth middleware error:', error)
       return NextResponse.json(

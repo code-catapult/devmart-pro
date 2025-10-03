@@ -7,6 +7,8 @@ import { compare, hash } from 'bcryptjs'
 import { UserRepository } from '@/lib/repositories/user-repository'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 
 // PUT /api/user/password
 async function changePassword(req: AuthenticatedRequest) {
@@ -66,12 +68,21 @@ async function changePassword(req: AuthenticatedRequest) {
     // Hash new password
     const newPasswordHash = await hash(newPassword, 12)
 
-    // Update password using repository
+    // Update password using repository (this will set lastPasswordChange)
     await UserRepository.updatePassword(user.id, newPasswordHash)
+
+    // Refresh the current session to include the new lastPasswordChange timestamp
+    // This keeps the current session alive while invalidating all other sessions
+    const session = await getServerSession(authOptions)
+    if (session?.user) {
+      // Trigger session update on next request
+      // The client should call update() from useSession to refresh immediately
+    }
 
     return NextResponse.json({
       success: true,
       message: 'Password updated successfully',
+      shouldRefreshSession: true, // Signal frontend to refresh session
     })
   } catch (error) {
     if (error instanceof z.ZodError) {
