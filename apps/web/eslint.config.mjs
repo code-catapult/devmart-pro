@@ -42,7 +42,7 @@ const eslintConfig = [
       '@typescript-eslint/no-unused-vars': 'error',
       '@typescript-eslint/no-explicit-any': 'warn',
       'prefer-const': 'off',
-      'no-console': 'warn',
+      'no-console': 'off',
     },
   },
 ]

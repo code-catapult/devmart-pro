@@ -54,3 +54,6 @@ redis_data/
 # Database files
 *.db
 *.sqlite
+
+# Ignore TypeScript build info
+*.tsbuildinfo
