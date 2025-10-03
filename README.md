@@ -22,7 +22,8 @@ DevMart Pro is a complete e-commerce solution showcasing the integration of cutt
 - **Modern UI/UX**: Responsive design with Tailwind CSS and shadcn/ui components
 - **State Management**: Predictable state handling with Redux Toolkit
 - **Database**: Robust PostgreSQL schema with Prisma ORM
-- **Authentication**: Secure session management with NextAuth.js
+- **Authentication**: JWT-based stateless authentication with NextAuth.js
+- **Caching**: Redis for high-performance application-level data caching
 - **Testing**: Comprehensive test coverage with Jest and React Testing Library
 - **Code Quality**: Automated linting, formatting, and pre-commit hooks
 
@@ -39,10 +40,10 @@ DevMart Pro is a complete e-commerce solution showcasing the integration of cutt
 ### **Backend**
 
 - **tRPC 10.0+** - End-to-end type-safe API layer with React Query integration
-- **NextAuth.js 4.24+** - Secure authentication and session management
+- **NextAuth.js 4.24+** - Secure authentication with JWT-based session management
 - **Prisma** - Type-safe database ORM with automatic migrations
 - **PostgreSQL 15+** - Robust relational database for production workloads
-- **Redis 7.0+** - High-performance caching and session storage
+- **Redis 7.0+** - High-performance caching for application data
 
 ### **Development & DevOps**
 
@@ -116,11 +117,34 @@ devmart-pro/
 
 ## 🔐 Security Implementation
 
+### **Authentication Architecture**
+
+This project implements a modern **JWT-based stateless authentication system** using NextAuth.js:
+
+**Session Management Strategy:**
+
+- **JWT Tokens**: Sessions stored in encrypted HTTP-only cookies (not in database or Redis)
+- **Stateless Authentication**: No server-side session storage required
+- **Scalability**: Works across multiple servers without shared session state
+- **Performance**: No database lookup needed to validate sessions
+- **Security**: HTTP-only cookies prevent XSS attacks
+
+**Key Benefits:**
+
+- ✅ **Stateless**: Sessions in encrypted cookies, not server storage
+- ✅ **Scalable**: Multiple servers without session synchronization
+- ✅ **Fast**: No database queries for session validation
+- ✅ **Secure**: HTTP-only + Secure flags in production
+- ✅ **Modern**: Industry-standard JWT authentication pattern
+
+**Redis Usage Note**: Redis is configured for application-level caching (products, cart data, etc.) but is **NOT used for session storage**. Sessions are handled entirely through JWT tokens in HTTP-only cookies.
+
 ### **Authentication & Authorization**
 
-- **JWT Token Management**: Secure session handling with refresh tokens
+- **JWT Session Management**: Stateless authentication with HTTP-only cookies
 - **Role-Based Access Control**: User and Admin permission systems
 - **Password Security**: bcrypt hashing with salt rounds
+- **Session Invalidation**: Timestamp-based validation for password changes
 - **CSRF Protection**: Built-in security with NextAuth.js
 
 ### **API Security**
@@ -157,9 +181,9 @@ cp .env.example .env.local
 
 # Configure required environment variables:
 # DATABASE_URL="postgresql://postgres:password@localhost:5432/devmart"
-# NEXTAUTH_SECRET="your-secret-key-here"
+# NEXTAUTH_SECRET="your-secret-key-here"  # Used for JWT encryption
 # NEXTAUTH_URL="http://localhost:3000"
-# REDIS_URL="redis://localhost:6379"
+# REDIS_URL="redis://localhost:6379"      # Used for application caching only
 ```
 
 3. **Development Environment**
