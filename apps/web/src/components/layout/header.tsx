@@ -25,6 +25,7 @@ import {
   Settings,
   Shield,
 } from 'lucide-react'
+import { Route } from 'next'
 
 interface NavigationItem {
   name: string
@@ -124,10 +125,10 @@ export function Header() {
           {navigationItems.map((item) => (
             <Link
               key={item.href}
-              href={item.href}
-              className={`text-sm font-medium transition-colors hover:text-primary ${
+              href={item.href as Route}
+              className={`text-sm font-medium transition-colors hover:text-primary pb-1 ${
                 isActivePath(item.href)
-                  ? 'text-foreground'
+                  ? 'text-foreground font-semibold border-b-2 border-blue-600'
                   : 'text-foreground/60'
               }`}
             >
