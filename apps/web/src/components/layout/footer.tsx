@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { Route } from 'next'
 import {
   Store,
   Mail,
@@ -84,8 +85,9 @@ export function Footer() {
             </div>
             <p className="text-gray-400 mb-6 max-w-md">
               Your trusted e-commerce platform for quality products at
-              competitive prices. We're committed to providing an exceptional
-              shopping experience with secure payments and reliable delivery.
+              competitive prices. We&apos;re committed to providing an
+              exceptional shopping experience with secure payments and reliable
+              delivery.
             </p>
 
             {/* Contact Information */}
@@ -116,7 +118,7 @@ export function Footer() {
                 {section.links.map((link) => (
                   <li key={link.name}>
                     <Link
-                      href={link.href}
+                      href={link.href as Route}
                       className="text-gray-400 hover:text-white transition-colors text-sm"
                     >
                       {link.name}
@@ -177,16 +179,16 @@ export function Footer() {
                 Follow us:
               </span>
               {socialLinks.map((social) => (
-                <a
+                <Link
                   key={social.name}
-                  href={social.href}
+                  href={social.href as Route}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-gray-400 hover:text-white transition-colors"
                   aria-label={`Follow us on ${social.name}`}
                 >
                   <social.icon className="h-5 w-5" />
-                </a>
+                </Link>
               ))}
             </div>
           </div>

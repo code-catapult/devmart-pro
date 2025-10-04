@@ -72,7 +72,7 @@ export const authRouter = createTRPCRouter({
   // Check if email is available
   checkEmail: publicProcedure
     .input(z.object({ email: z.email() }))
-    .query(async ({ input }) => {
+    .mutation(async ({ input }) => {
       const user = await prisma.user.findUnique({
         where: { email: input.email.toLowerCase() },
       })

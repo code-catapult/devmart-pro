@@ -1,7 +1,6 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import { TRPCProvider } from './providers'
-import { MainLayout } from '@/components/layout/main-layout'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -51,11 +50,12 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
-  },
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
 }
 
 export default function RootLayout({
@@ -66,9 +66,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <TRPCProvider>
-          <MainLayout>{children}</MainLayout>
-        </TRPCProvider>
+        <TRPCProvider>{children}</TRPCProvider>
       </body>
     </html>
   )

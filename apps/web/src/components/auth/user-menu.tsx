@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { Route } from 'next'
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
 import {
@@ -107,14 +108,14 @@ export function UserMenu() {
         </DropdownMenuItem>
 
         <DropdownMenuItem asChild>
-          <Link href="/orders" className="flex items-center">
+          <Link href={'/orders' as Route} className="flex items-center">
             <ShoppingBag className="mr-2 h-4 w-4" />
             My Orders
           </Link>
         </DropdownMenuItem>
 
         <DropdownMenuItem asChild>
-          <Link href="/settings" className="flex items-center">
+          <Link href={'/settings' as Route} className="flex items-center">
             <Settings className="mr-2 h-4 w-4" />
             Settings
           </Link>

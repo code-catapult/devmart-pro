@@ -126,9 +126,9 @@ export function Header() {
             <Link
               key={item.href}
               href={item.href as Route}
-              className={`text-sm font-medium transition-colors hover:text-primary pb-1 ${
+              className={`text-sm font-medium transition-colors hover:text-primary ${
                 isActivePath(item.href)
-                  ? 'text-foreground font-semibold border-b-2 border-blue-600'
+                  ? 'text-primary font-semibold border-b-2 border-primary'
                   : 'text-foreground/60'
               }`}
             >
@@ -212,7 +212,7 @@ export function Header() {
                 {navigationItems.map((item) => (
                   <Link
                     key={item.href}
-                    href={item.href}
+                    href={item.href as Route}
                     onClick={() => setIsMobileMenuOpen(false)}
                     className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground ${
                       isActivePath(item.href)
@@ -235,7 +235,7 @@ export function Header() {
                   {visibleUserItems.map((item) => (
                     <Link
                       key={item.href}
-                      href={item.href}
+                      href={item.href as Route}
                       onClick={() => setIsMobileMenuOpen(false)}
                       className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground ${
                         isActivePath(item.href)
@@ -259,7 +259,7 @@ export function Header() {
                   {visibleAdminItems.map((item) => (
                     <Link
                       key={item.href}
-                      href={item.href}
+                      href={item.href as Route}
                       onClick={() => setIsMobileMenuOpen(false)}
                       className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground ${
                         isActivePath(item.href)

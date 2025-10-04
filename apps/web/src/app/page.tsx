@@ -9,6 +9,8 @@ import {
 import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
 import { ShoppingBag, Users, Shield, Zap } from 'lucide-react'
+import { Route } from 'next'
+import { MainLayout } from '../components/layout/main-layout'
 
 const features = [
   {
@@ -39,7 +41,7 @@ const features = [
 
 export default function HomePage() {
   return (
-    <>
+    <MainLayout>
       {/* Hero Section */}
       <section className="bg-gradient-to-b from-blue-50 to-white py-20">
         <div className="container mx-auto px-4 text-center">
@@ -68,7 +70,7 @@ export default function HomePage() {
               size="lg"
               className="border-blue-700 text-gray-700 hover:bg-blue-200 focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
             >
-              <Link href="/products">Browse Products</Link>
+              <Link href={'/products' as Route}>Browse Products</Link>
             </Button>
           </div>
         </div>
@@ -159,11 +161,11 @@ export default function HomePage() {
               <Link href="/auth/signup">Create Account</Link>
             </Button>
             <Button asChild variant="outline" size="lg">
-              <Link href="/about">Learn More</Link>
+              <Link href={'/about' as Route}>Learn More</Link>
             </Button>
           </div>
         </div>
       </section>
-    </>
+    </MainLayout>
   )
 }
