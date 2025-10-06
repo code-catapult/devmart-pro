@@ -28,7 +28,7 @@ export function RegisterForm() {
   const [isLoading, setIsLoading] = useState(false)
 
   const registerMutation = api.auth.register.useMutation({
-    onSuccess: async (data) => {
+    onSuccess: async () => {
       // Auto-sign in after successful registration
       const result = await signIn('credentials', {
         email: formData.email,
@@ -77,7 +77,9 @@ export function RegisterForm() {
           setErrors((prev) => ({ ...prev, email: result.message }))
         }
       } catch (error) {
-        // Handle error silently for better UX
+        console.error('Email check failed:', error)
+        // Optionally set an error message
+        // setErrors((prev) => ({ ...prev, email: 'Could not verify email' }))
       }
     }
   }
@@ -129,7 +131,8 @@ export function RegisterForm() {
         name: formData.name,
       })
     } catch (error) {
-      // Error handling is done in the mutation
+      console.error('Registration failed:', error)
+      // Error handling is done in the mutation's onError callback
     }
   }
 
@@ -223,7 +226,7 @@ export function RegisterForm() {
           <Button
             type="submit"
             className="w-full"
-            disabled={isLoading || checkEmailMutation.isLoading}
+            disabled={isLoading || checkEmailMutation.isPending}
           >
             {isLoading ? 'Creating Account...' : 'Create Account'}
           </Button>

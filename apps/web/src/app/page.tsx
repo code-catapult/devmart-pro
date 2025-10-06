@@ -1,76 +1,171 @@
-'use client'
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import Link from 'next/link'
+import { ShoppingBag, Users, Shield, Zap } from 'lucide-react'
+import { Route } from 'next'
+import { MainLayout } from '../components/layout/main-layout'
 
-import { api } from '~/utils/api'
-import { useAppSelector, useAppDispatch } from '~/store'
-import { setTheme } from '~/store/slices/appSlice'
-import { useSession, signIn, signOut } from 'next-auth/react'
+const features = [
+  {
+    icon: ShoppingBag,
+    title: 'Complete E-commerce',
+    description:
+      'Full-featured shopping experience with cart, checkout, and order management.',
+  },
+  {
+    icon: Users,
+    title: 'User Management',
+    description:
+      'Secure authentication with role-based access control and user profiles.',
+  },
+  {
+    icon: Shield,
+    title: 'Enterprise Security',
+    description:
+      'Built-in security features including encryption, validation, and monitoring.',
+  },
+  {
+    icon: Zap,
+    title: 'High Performance',
+    description:
+      'Optimized for speed with caching, CDN integration, and modern architecture.',
+  },
+]
 
 export default function HomePage() {
-  const { data: ping, isLoading } = api.health.ping.useQuery()
-  const { data: echo } = api.health.echo.useQuery({
-    text: 'Hello tRPC!',
-  })
-
-  const { theme, isLoading: appLoading } = useAppSelector((state) => state.app)
-  const dispatch = useAppDispatch()
-
-  const { data: session, status } = useSession()
-
-  const toggleTheme = () => {
-    dispatch(setTheme(theme === 'light' ? 'dark' : 'light'))
-  }
-
-  if (isLoading) return <div>Loading...</div>
-
   return (
-    <div className="p-8">
-      <h1 className="text-4xl font-bold mb-4 text-blue-500">
-        DevMart Pro Foundation Test
-      </h1>
-
-      {/* tRPC Test */}
-      <div className="mb-6">
-        <h2 className="text-lg font-semibold mb-2">tRPC API Layer</h2>
-        <p>Ping: {ping?.message}</p>
-        <p>Echo: {echo?.echo}</p>
-      </div>
-
-      {/* Redux Test */}
-      <div className="mb-6">
-        <h2 className="text-lg font-semibold mb-2">Redux Store</h2>
-        <p>Current Theme: {theme}</p>
-        <p>App loading: {appLoading.toString()}</p>
-        <button
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-          onClick={toggleTheme}
-        >
-          Toggle Theme
-        </button>
-      </div>
-
-      {/* Authentication Test */}
-      <div className="mb-6">
-        <h2 className="text-lg font-semibold mb-2">Authentication System</h2>
-        <p>Status: {status}</p>
-        {session ? (
-          <div>
-            <p>Signed in as: {session.user?.email}</p>
-            <button
-              onClick={() => signOut()}
-              className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+    <MainLayout>
+      {/* Hero Section */}
+      <section className="bg-gradient-to-b from-blue-50 to-white py-20">
+        <div className="container mx-auto px-4 text-center">
+          <Badge variant="secondary" className="mb-4 text-gray-600 bg-blue-100">
+            Now in Development
+          </Badge>
+          <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
+            DevMart Pro
+          </h1>
+          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+            A modern e-commerce learning platform built with Next.js,
+            TypeScript, and the latest web technologies. Perfect for developers
+            learning full-stack development.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button
+              asChild
+              size="lg"
+              className="bg-blue-600 text-white hover:bg-blue-700 focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
-              Sign Out
-            </button>
+              <Link href="/auth/signup">Get Started</Link>
+            </Button>
+            <Button
+              asChild
+              variant="outline"
+              size="lg"
+              className="border-blue-700 text-gray-700 hover:bg-blue-200 focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+            >
+              <Link href={'/products' as Route}>Browse Products</Link>
+            </Button>
           </div>
-        ) : (
-          <button
-            onClick={() => signIn()}
-            className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-          >
-            Sign In
-          </button>
-        )}
-      </div>
-    </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="py-20">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-100 mb-4">
+              Built for Learning
+            </h2>
+            <p className="text-gray-100 max-w-2xl mx-auto">
+              Explore modern web development concepts through a real-world
+              e-commerce application with comprehensive features and best
+              practices.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {features.map((feature) => (
+              <Card key={feature.title} className="text-center">
+                <CardHeader>
+                  <div className="mx-auto w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+                    <feature.icon className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <CardTitle className="text-lg">{feature.title}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription>{feature.description}</CardDescription>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Tech Stack Section */}
+      <section className="bg-gray-50 py-20">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+              Modern Tech Stack
+            </h2>
+            <p className="text-gray-600 max-w-2xl mx-auto">
+              Learn industry-standard technologies used by top development teams
+              worldwide.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8">
+            {[
+              'Next.js 14',
+              'TypeScript',
+              'Tailwind CSS',
+              'Prisma ORM',
+              'PostgreSQL',
+              'Redis',
+              'tRPC',
+              'NextAuth.js',
+              'Jest',
+              'Docker',
+              'Redux Toolkit',
+              'Radix UI',
+            ].map((tech) => (
+              <div key={tech} className="text-center">
+                <div className="bg-white rounded-lg p-4 shadow-sm">
+                  <p className="font-medium text-gray-900">{tech}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-20">
+        <div className="container mx-auto px-4 text-center">
+          <h2 className="text-3xl font-bold text-gray-100 mb-4">
+            Ready to Start Learning?
+          </h2>
+          <p className="text-gray-100 mb-8 max-w-2xl mx-auto">
+            Join our platform and start exploring modern e-commerce development
+            with hands-on projects and real-world scenarios.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button asChild size="lg">
+              <Link href="/auth/signup">Create Account</Link>
+            </Button>
+            <Button asChild variant="outline" size="lg">
+              <Link href={'/about' as Route}>Learn More</Link>
+            </Button>
+          </div>
+        </div>
+      </section>
+    </MainLayout>
   )
 }
