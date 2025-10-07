@@ -4,6 +4,7 @@ import { api, staticApi } from '~/trpc/server'
 import { Breadcrumb } from '~/components/ui/breadcrumb'
 import { ProductImageGallery } from '~/components/product/product-image-gallery'
 import { ProductInfo } from '~/components/product/product-info'
+import { AddToCartSection } from '~/components/product/add-to-cart-section'
 
 // Generate static params for SSG (optional but recommended)
 export async function generateStaticParams() {
@@ -84,14 +85,13 @@ export default async function ProductDetailPage({
     href: `/products/${product.slug}`,
   })
 
-  // Basic shell - we'll add components progressively in later tasks
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="space-y-8">
-        {/* Breadcrumb will be added in Task 2 */}
+        {/* Breadcrumb */}
         <Breadcrumb items={breadcrumbItems} />
 
-        {/* Temporary basic product display - will be replaced with components */}
+        {/* Product display */}
         <div className="grid md:grid-cols-2 gap-8">
           {/* Left: Image Gallery */}
           <ProductImageGallery
@@ -99,32 +99,12 @@ export default async function ProductDetailPage({
             productName={product.name}
           />
 
-          {/* Right: Product Info (temporary basic display) */}
-          <ProductInfo product={product} />
-          {/* <div className="space-y-4">
-            <h1 className="text-3xl font-bold">{product.name}</h1>
-            <p className="text-2xl font-semibold text-primary">
-              ${(product.price / 100).toFixed(2)}
-            </p>
-            <p className="text-muted-foreground">{product.description}</p>
-
-            <div className="border-t pt-4">
-              <p>
-                <strong>Category:</strong> {product.category.name}
-              </p>
-              <p>
-                <strong>Inventory:</strong> {product.inventory} in stock
-              </p>
-              <p>
-                <strong>Reviews:</strong> {product._count.reviews}
-              </p>
-            </div>
-          </div> */}
+          {/* Right: Product Info */}
+          <div className="space-y-6">
+            <ProductInfo product={product} />
+            <AddToCartSection product={product} />
+          </div>
         </div>
-
-        {/* Image Gallery will be added in Task 3 */}
-        {/* Product Info component will be added in Task 4 */}
-        {/* Add to Cart will be added in Task 5 */}
         {/* Related Products will be added in Task 6 */}
       </div>
     </div>
