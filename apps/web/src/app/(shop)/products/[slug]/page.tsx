@@ -5,6 +5,7 @@ import { Breadcrumb } from '~/components/ui/breadcrumb'
 import { ProductImageGallery } from '~/components/product/product-image-gallery'
 import { ProductInfo } from '~/components/product/product-info'
 import { AddToCartSection } from '~/components/product/add-to-cart-section'
+import { RelatedProducts } from '~/components/product/related-products'
 
 // Generate static params for SSG (optional but recommended)
 export async function generateStaticParams() {
@@ -105,7 +106,10 @@ export default async function ProductDetailPage({
             <AddToCartSection product={product} />
           </div>
         </div>
-        {/* Related Products will be added in Task 6 */}
+        <RelatedProducts
+          productId={product.id}
+          categoryId={product.categoryId}
+        />
       </div>
     </div>
   )
