@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import { api, staticApi } from '~/trpc/server'
+import { Breadcrumb } from '~/components/ui/breadcrumb'
 
 // Generate static params for SSG (optional but recommended)
 export async function generateStaticParams() {
@@ -57,11 +58,36 @@ export default async function ProductDetailPage({
     notFound() // Shows 404 page
   }
 
+  // Build breadcrumb items
+  const breadcrumbItems = [
+    { label: 'Home', href: '/' },
+    { label: 'Products', href: '/products' },
+  ]
+
+  // Add category hierarchy
+  if (product.category.parent) {
+    breadcrumbItems.push({
+      label: product.category.parent.name,
+      href: `/products?category=${product.category.parent.id}`,
+    })
+  }
+
+  breadcrumbItems.push({
+    label: product.category.name,
+    href: `/products?category=${product.category.id}`,
+  })
+
+  breadcrumbItems.push({
+    label: product.name,
+    href: `/products/${product.slug}`,
+  })
+
   // Basic shell - we'll add components progressively in later tasks
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="space-y-8">
         {/* Breadcrumb will be added in Task 2 */}
+        <Breadcrumb items={breadcrumbItems} />
 
         {/* Temporary basic product display - will be replaced with components */}
         <div className="space-y-4">
