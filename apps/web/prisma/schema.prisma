@@ -27,6 +27,14 @@ enum OrderStatus {
   CANCELLED
 }
 
+model HealthCheck {
+  id        Int      @id @default(autoincrement())
+  status    String   @default("ok")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("health_check")
+}
+
 // Core User model for authentication and user management
 model User {
   id               String    @id @default(cuid())

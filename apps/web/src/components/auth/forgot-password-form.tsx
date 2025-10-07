@@ -19,7 +19,7 @@ export function ForgotPasswordForm() {
   const [isSuccess, setIsSuccess] = useState(false)
 
   const resetMutation = api.auth.requestPasswordReset.useMutation({
-    onSuccess: (data) => {
+    onSuccess: () => {
       setIsSuccess(true)
       setError('')
     },
@@ -74,7 +74,7 @@ export function ForgotPasswordForm() {
       <CardHeader>
         <CardTitle>Forgot Password?</CardTitle>
         <CardDescription>
-          Enter your email address and we'll send you a password reset link
+          Enter your email address and we&apos;ll send you a password reset link
         </CardDescription>
       </CardHeader>
       <CardContent>

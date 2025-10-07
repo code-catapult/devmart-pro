@@ -10,15 +10,15 @@ import { hash } from 'bcryptjs'
 import { z } from 'zod'
 
 interface RouteContext {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 // Admin actions to update and delete users by ID
 
 // PUT /api/admin/users/[id]
-async function updateUser(req: AuthenticatedRequest, context?: RouteContext) {
+async function updateUser(req: AuthenticatedRequest, context: RouteContext) {
   try {
-    const { id } = context!.params
+    const { id } = await context.params
     const body = await req.json()
 
     const updateSchema = z.object({
@@ -129,9 +129,9 @@ async function updateUser(req: AuthenticatedRequest, context?: RouteContext) {
 }
 
 // DELETE /api/admin/users/[id]
-async function deleteUser(req: AuthenticatedRequest, context?: RouteContext) {
+async function deleteUser(req: AuthenticatedRequest, context: RouteContext) {
   try {
-    const { id } = context!.params
+    const { id } = await context.params
 
     // Prevent deleting the last admin
     const user = await prisma.user.findUnique({

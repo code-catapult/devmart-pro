@@ -15,10 +15,10 @@ export interface AuthenticatedRequest extends NextRequest {
 
 // Middleware to check if user is authenticated
 export function withAuth<T = unknown>(
-  handler: (req: AuthenticatedRequest, context?: T) => Promise<NextResponse>,
+  handler: (req: AuthenticatedRequest, context: T) => Promise<NextResponse>,
   options: { requireRole?: Role } = {}
 ) {
-  return async (req: NextRequest, context?: T): Promise<NextResponse> => {
+  return async (req: NextRequest, context: T): Promise<NextResponse> => {
     try {
       // Use getServerSession for database sessions (compatible with PrismaAdapter)
       const session = await getServerSession(authOptions)
@@ -94,7 +94,7 @@ export function withAuth<T = unknown>(
 
 // Convenience middleware for admin routes
 export function withAdmin<T = unknown>(
-  handler: (req: AuthenticatedRequest, context?: T) => Promise<NextResponse>
+  handler: (req: AuthenticatedRequest, context: T) => Promise<NextResponse>
 ) {
   return withAuth(handler, { requireRole: Role.ADMIN })
 }

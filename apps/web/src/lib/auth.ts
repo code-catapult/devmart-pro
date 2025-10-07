@@ -91,7 +91,6 @@ export const authOptions: NextAuthOptions = {
   },
   pages: {
     signIn: '/auth/signin',
-    signUp: '/auth/signup',
     error: '/auth/error',
   },
   callbacks: {
@@ -139,14 +138,14 @@ export const authOptions: NextAuthOptions = {
     },
   },
   events: {
-    async signIn(message) {
+    async signIn({ user }) {
       // Only log in development, use proper logging service in production
       if (process.env.NODE_ENV === 'development') {
-        console.log('User signed in:', message.user.email)
+        console.log('User signed in:', user.email)
       }
       // In production, integrate with logging service (e.g., Winston, Sentry)
     },
-    async signOut(message) {
+    async signOut() {
       if (process.env.NODE_ENV === 'development') {
         console.log('User signed out')
       }
