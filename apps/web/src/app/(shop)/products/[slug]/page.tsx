@@ -1,7 +1,8 @@
 import { notFound } from 'next/navigation'
-import Image from 'next/image'
+
 import { api, staticApi } from '~/trpc/server'
 import { Breadcrumb } from '~/components/ui/breadcrumb'
+import { ProductImageGallery } from '~/components/product/product-image-gallery'
 
 // Generate static params for SSG (optional but recommended)
 export async function generateStaticParams() {
@@ -90,36 +91,32 @@ export default async function ProductDetailPage({
         <Breadcrumb items={breadcrumbItems} />
 
         {/* Temporary basic product display - will be replaced with components */}
-        <div className="space-y-4">
-          <h1 className="text-4xl font-bold">{product.name}</h1>
-          <p className="text-2xl font-semibold text-primary">
-            ${(product.price / 100).toFixed(2)}
-          </p>
-          <p className="text-muted-foreground">{product.description}</p>
+        <div className="grid md:grid-cols-2 gap-8">
+          {/* Left: Image Gallery */}
+          <ProductImageGallery
+            images={product.images}
+            productName={product.name}
+          />
 
-          {/* Show first image temporarily */}
-          {product.images.length > 0 && (
-            <div className="aspect-square w-full max-w-md bg-gray-100 rounded-lg overflow-hidden relative">
-              <Image
-                src={product.images[0]}
-                alt={product.name}
-                fill
-                className="object-cover"
-                unoptimized
-              />
+          {/* Right: Product Info (temporary basic display) */}
+          <div className="space-y-4">
+            <h1 className="text-3xl font-bold">{product.name}</h1>
+            <p className="text-2xl font-semibold text-primary">
+              ${(product.price / 100).toFixed(2)}
+            </p>
+            <p className="text-muted-foreground">{product.description}</p>
+
+            <div className="border-t pt-4">
+              <p>
+                <strong>Category:</strong> {product.category.name}
+              </p>
+              <p>
+                <strong>Inventory:</strong> {product.inventory} in stock
+              </p>
+              <p>
+                <strong>Reviews:</strong> {product._count.reviews}
+              </p>
             </div>
-          )}
-
-          <div className="border-t pt-4">
-            <p>
-              <strong>Category:</strong> {product.category.name}
-            </p>
-            <p>
-              <strong>Inventory:</strong> {product.inventory} in stock
-            </p>
-            <p>
-              <strong>Reviews:</strong> {product._count.reviews}
-            </p>
           </div>
         </div>
 
