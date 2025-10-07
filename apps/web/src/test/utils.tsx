@@ -17,7 +17,7 @@ const createTestStore = (preloadedState = {}) => {
 
 interface AllTheProvidersProps {
   children: React.ReactNode
-  initialState?: any
+  initialState?: Record<string, unknown>
 }
 
 const AllTheProviders = ({
@@ -36,7 +36,7 @@ const AllTheProviders = ({
 const customRender = (
   ui: ReactElement,
   options?: Omit<RenderOptions, 'wrapper'> & {
-    initialState?: any
+    initialState?: Record<string, unknown>
   }
 ) => {
   const { initialState, ...renderOptions } = options || {}

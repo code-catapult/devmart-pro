@@ -23,6 +23,15 @@
   --radius: 0.5rem;
 }
 
+* {
+  border-color: hsl(var(--color-border));
+}
+
+body {
+  background-color: hsl(var(--color-background));
+  color: hsl(var(--color-foreground));
+}
+
 @media (prefers-color-scheme: dark) {
   @theme {
     --color-background: 222.2 84% 4.9%;
@@ -45,13 +54,4 @@
     --color-input: 217.2 32.6% 17.5%;
     --color-ring: 224.3 76.3% 94.1%;
   }
-}
-
-* {
-  border-color: hsl(var(--color-border));
-}
-
-body {
-  background-color: hsl(var(--color-background));
-  color: hsl(var(--color-foreground));
 }

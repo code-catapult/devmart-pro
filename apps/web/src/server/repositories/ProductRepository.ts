@@ -75,6 +75,41 @@ export class ProductRepository {
       },
     })
   }
+
+  /**
+   * Find product by slug with full relations
+   */
+
+  async findBySlug(slug: string) {
+    return prisma.product.findUnique({
+      where: { slug },
+      include: {
+        category: { include: { parent: true } }, // For breadcrumb navigation
+        _count: { select: { reviews: true } },
+      },
+    })
+  }
+
+  /**
+   * Find related products based on category (exclude current product)
+   */
+
+  async findRelated(productId: string, categoryId: string, limit: number = 6) {
+    return prisma.product.findMany({
+      where: {
+        categoryId,
+        status: 'ACTIVE',
+        NOT: { id: productId },
+      },
+      include: {
+        category: true,
+      },
+      take: limit,
+      orderBy: {
+        createdAt: 'desc',
+      },
+    })
+  }
 }
 
 // Export singleton instance

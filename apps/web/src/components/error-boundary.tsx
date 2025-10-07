@@ -152,7 +152,7 @@ export function useErrorBoundary() {
 export function APIErrorBoundary({ children }: { children: React.ReactNode }) {
   return (
     <GlobalErrorBoundary
-      fallback={({ error, retry }) => (
+      fallback={({ retry }) => (
         <div className="p-6 text-center">
           <AlertTriangle className="w-8 h-8 text-red-500 mx-auto mb-3" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">

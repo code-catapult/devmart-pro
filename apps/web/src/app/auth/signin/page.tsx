@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { LoginForm } from '@/components/auth/login-form'
 
 export default function SignInPage() {
@@ -8,7 +9,9 @@ export default function SignInPage() {
           <h1 className="text-3xl font-bold text-amber-900">DevMart Pro</h1>
           <p className="mt-2 text-gray-600">Sign in to your account</p>
         </div>
-        <LoginForm />
+        <Suspense fallback={<div>Loading...</div>}>
+          <LoginForm />
+        </Suspense>
       </div>
     </div>
   )

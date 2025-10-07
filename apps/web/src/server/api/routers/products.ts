@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { createTRPCRouter, publicProcedure } from '../trpc'
 import { productRepository } from '~/server/repositories/ProductRepository'
+import { TRPCError } from '@trpc/server'
 
 export const productsRouter = createTRPCRouter({
   /**
@@ -35,8 +36,48 @@ export const productsRouter = createTRPCRouter({
     .query(async ({ input }) => {
       const product = await productRepository.findById(input.id)
       if (!product) {
-        throw new Error('Product not found')
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Product not found',
+        })
       }
       return product
+    }),
+
+  /**
+   * Get product by slug for detail page
+   */
+  getBySlug: publicProcedure
+    .input(z.object({ slug: z.string() }))
+    .query(async ({ input }) => {
+      const product = await productRepository.findBySlug(input.slug)
+
+      if (!product) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Product not found',
+        })
+      }
+
+      return product
+    }),
+
+  /**
+   * Get related products by category
+   */
+  getRelated: publicProcedure
+    .input(
+      z.object({
+        productId: z.string(),
+        categoryId: z.string(),
+        limit: z.number().min(1).max(10).default(6),
+      })
+    )
+    .query(async ({ input }) => {
+      return await productRepository.findRelated(
+        input.productId,
+        input.categoryId,
+        input.limit
+      )
     }),
 })
