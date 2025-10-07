@@ -132,7 +132,7 @@ async function main() {
           'Flagship Android smartphone with stunning display and camera',
         price: 119900,
         comparePrice: 129900,
-        inventory: 40,
+        inventory: 7,
         images: [
           'https://placehold.co/400x400',
           'https://placehold.co/400x400',
@@ -154,7 +154,7 @@ async function main() {
           'AI-powered Android phone with exceptional photography capabilities',
         price: 99900,
         comparePrice: 109900,
-        inventory: 35,
+        inventory: 0,
         images: [
           'https://placehold.co/400x400',
           'https://placehold.co/400x400',

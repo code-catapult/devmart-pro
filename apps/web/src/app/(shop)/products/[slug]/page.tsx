@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { api, staticApi } from '~/trpc/server'
 import { Breadcrumb } from '~/components/ui/breadcrumb'
 import { ProductImageGallery } from '~/components/product/product-image-gallery'
+import { ProductInfo } from '~/components/product/product-info'
 
 // Generate static params for SSG (optional but recommended)
 export async function generateStaticParams() {
@@ -99,7 +100,8 @@ export default async function ProductDetailPage({
           />
 
           {/* Right: Product Info (temporary basic display) */}
-          <div className="space-y-4">
+          <ProductInfo product={product} />
+          {/* <div className="space-y-4">
             <h1 className="text-3xl font-bold">{product.name}</h1>
             <p className="text-2xl font-semibold text-primary">
               ${(product.price / 100).toFixed(2)}
@@ -117,7 +119,7 @@ export default async function ProductDetailPage({
                 <strong>Reviews:</strong> {product._count.reviews}
               </p>
             </div>
-          </div>
+          </div> */}
         </div>
 
         {/* Image Gallery will be added in Task 3 */}
