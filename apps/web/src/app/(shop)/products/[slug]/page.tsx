@@ -23,10 +23,10 @@ export async function generateStaticParams() {
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ slug: string }>
+  params: Promise<{ slug: string }> // Next.js 15: params is a Promise
 }) {
+  const { slug } = await params // Await the params to get the slug
   const caller = await api()
-  const { slug } = await params
 
   try {
     const product = await caller.products.getBySlug({ slug })
