@@ -25,6 +25,8 @@ import {
   Settings,
   Shield,
 } from 'lucide-react'
+import { useCart } from '~/hooks/use-cart'
+import { toggleCart } from '~/store/slices/cartSlice'
 import { Route } from 'next'
 
 interface NavigationItem {
@@ -90,8 +92,7 @@ export function Header() {
   const { isAuthenticated, isAdmin, user } = useAuth()
   const pathname = usePathname()
 
-  // Mock cart item count (will be replaced with actual cart data)
-  const cartItemCount = 3
+  const { itemCount, dispatch } = useCart()
 
   const isActivePath = (href: string) => {
     if (href === '/') {
@@ -149,14 +150,19 @@ export function Header() {
         </div>
 
         {/* Cart Button */}
-        <Button variant="ghost" size="sm" className="relative ml-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="relative ml-2"
+          onClick={() => dispatch(toggleCart())}
+        >
           <ShoppingCart className="h-4 w-4" />
-          {cartItemCount > 0 && (
+          {itemCount > 0 && (
             <Badge
               variant="destructive"
               className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs"
             >
-              {cartItemCount > 99 ? '99+' : cartItemCount}
+              {itemCount > 99 ? '99+' : itemCount}
             </Badge>
           )}
           <span className="sr-only">Shopping cart</span>
