@@ -3,6 +3,7 @@ import { useSession } from 'next-auth/react'
 import { useCart } from './use-cart'
 import { api } from '~/utils/api'
 import { setItems } from '~/store/slices/cartSlice'
+import { serializeDates } from '~/lib/utils/serialize'
 
 const GUEST_CART_KEY = 'guest-cart'
 
@@ -21,16 +22,7 @@ export function useCartPersistence() {
       // Authenticated: Load from server
       if (serverCart) {
         // Serialize dates for Redux state
-        const serializedItems = serverCart.items.map((item) => ({
-          ...item,
-          createdAt: item.createdAt.toISOString(),
-          updatedAt: item.updatedAt.toISOString(),
-          product: {
-            ...item.product,
-            createdAt: item.product.createdAt.toISOString(),
-            updatedAt: item.product.updatedAt.toISOString(),
-          },
-        }))
+        const serializedItems = serializeDates(serverCart.items)
         dispatch(setItems(serializedItems))
 
         // Migrate guest cart if exists
