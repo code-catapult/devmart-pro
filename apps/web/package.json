@@ -18,6 +18,7 @@
     "test:repositories": "tsx scripts/test-repositories.ts",
     "test:jwt": "tsx scripts/test-jwt-auth.ts",
     "test:sessions": "tsx scripts/test-jwt-sessions.ts",
+    "test:stripe": "tsx --env-file=.env.local scripts/test-stripe.ts",
     "db:seed": "tsx prisma/seed.ts",
     "db:reset": "prisma migrate reset --force && npm run db:seed",
     "db:studio": "prisma studio"
@@ -35,6 +36,8 @@
     "@radix-ui/react-separator": "^1.1.7",
     "@radix-ui/react-slot": "^1.2.3",
     "@reduxjs/toolkit": "^2.9.0",
+    "@stripe/react-stripe-js": "^5.2.0",
+    "@stripe/stripe-js": "^8.0.0",
     "@tanstack/react-query": "^5.90.2",
     "@trpc/client": "^11.5.1",
     "@trpc/next": "^11.5.1",
@@ -56,6 +59,7 @@
     "react-redux": "^9.2.0",
     "resend": "^6.1.2",
     "sonner": "^2.0.7",
+    "stripe": "^19.1.0",
     "tailwind-merge": "^3.3.1",
     "tailwindcss-animate": "^1.0.7",
     "zod": "^4.1.11"
