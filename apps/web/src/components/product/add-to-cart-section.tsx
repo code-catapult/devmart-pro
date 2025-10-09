@@ -4,7 +4,8 @@ import { useState } from 'react'
 import { Product } from '@prisma/client'
 import { Button } from '~/components/ui/button'
 import { Minus, Plus, ShoppingCart } from 'lucide-react'
-import { toast } from 'sonner'
+import { useOptimisticCart } from '~/hooks/use-optimistic-cart'
+import { serializeDates } from '~/lib/utils/serialize'
 
 interface AddToCartSectionProps {
   product: Product
@@ -12,7 +13,7 @@ interface AddToCartSectionProps {
 
 export function AddToCartSection({ product }: AddToCartSectionProps) {
   const [quantity, setQuantity] = useState(1)
-  const [isAdding, setIsAdding] = useState(false)
+  const { addItem, isAdding } = useOptimisticCart()
 
   const isOutOfStock = product.inventory === 0
   const maxQuantity = product.inventory
@@ -25,26 +26,9 @@ export function AddToCartSection({ product }: AddToCartSectionProps) {
   }
 
   const handleAddToCart = async () => {
-    setIsAdding(true)
-
-    try {
-      // TODO: Will integrate with cart tRPC in Story 2.3
-      // For now, just show success toast
-      await new Promise((resolve) => setTimeout(resolve, 500)) // Simulate API call
-
-      toast.success('Added to cart', {
-        description: `${quantity} × ${product.name}`,
-      })
-
-      // Reset quantity after adding
-      setQuantity(1)
-    } catch {
-      toast.error('Error', {
-        description: 'Failed to add item to cart',
-      })
-    } finally {
-      setIsAdding(false)
-    }
+    const serializedProduct = serializeDates(product)
+    await addItem(product.id, quantity, serializedProduct)
+    setQuantity(1)
   }
 
   return (

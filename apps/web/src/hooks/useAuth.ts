@@ -55,7 +55,7 @@ export function useAuth() {
   const logout = async () => {
     try {
       dispatch(setLoading(true))
-      await signOut({ redirect: false })
+      await signOut({ redirect: true, callbackUrl: '/' })
       dispatch(clearAuth())
     } finally {
       dispatch(setLoading(false))

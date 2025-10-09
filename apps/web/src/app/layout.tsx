@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import { TRPCProvider } from './providers'
 import { Toaster } from 'sonner'
 import './globals.css'
+import { CartSidebar } from '../components/cart/cart-sidebar'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -69,6 +70,7 @@ export default function RootLayout({
       <body className={inter.className}>
         <TRPCProvider>
           {children}
+          <CartSidebar />
           <Toaster position="top-right" />
         </TRPCProvider>
       </body>
