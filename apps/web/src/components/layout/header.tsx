@@ -24,6 +24,7 @@ import {
   Package,
   Settings,
   Shield,
+  LayoutDashboard,
 } from 'lucide-react'
 import { useCart } from '~/hooks/use-cart'
 import { toggleCart } from '~/store/slices/cartSlice'
@@ -56,6 +57,12 @@ const userNavigationItems: NavigationItem[] = [
     name: 'Profile',
     href: '/profile',
     icon: <User className="w-4 h-4" />,
+    requireAuth: true,
+  },
+  {
+    name: 'Dashboard',
+    href: '/dashboard',
+    icon: <LayoutDashboard className="w-4 h-4" />,
     requireAuth: true,
   },
   {

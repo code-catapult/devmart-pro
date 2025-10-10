@@ -63,14 +63,18 @@ export class OrderService {
 
     // Send confirmation email
     try {
-      // Get user email - we need to fetch it since order doesn't include user relation
+      // Get user email and name - we need to fetch it since order doesn't include user relation
       const user = await prisma.user.findUnique({
         where: { id: userId },
-        select: { email: true },
+        select: { email: true, name: true },
       })
 
       if (user?.email) {
-        await emailService.sendOrderConfirmation(order, user.email)
+        await emailService.sendOrderConfirmation(
+          order,
+          user.email,
+          user.name ?? undefined
+        )
       }
     } catch (error) {
       // Log error but don't fail order creation
