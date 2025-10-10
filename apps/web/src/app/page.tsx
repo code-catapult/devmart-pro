@@ -43,9 +43,9 @@ export default function HomePage() {
   return (
     <MainLayout>
       {/* Hero Section */}
-      <section className="bg-gradient-to-b from-blue-50 to-white py-20">
-        <div className="container mx-auto px-4 text-center">
-          <Badge variant="secondary" className="mb-4 text-gray-600 bg-blue-100">
+      <section className="bg-gradient-to-b from-blue-50 to-white py-64">
+        <div className="container mx-auto px-4 text-center ">
+          <Badge variant="secondary" className="mb-4 text-gray-600">
             Now in Development
           </Badge>
           <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
@@ -57,27 +57,18 @@ export default function HomePage() {
             learning full-stack development.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button
-              asChild
-              size="lg"
-              className="bg-blue-600 text-white hover:bg-blue-700 focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
+            <Button asChild size="lg">
               <Link href="/auth/signup">Get Started</Link>
             </Button>
-            <Button
-              asChild
-              variant="outline"
-              size="lg"
-              className="border-blue-700 text-gray-700 hover:bg-blue-200 focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
-            >
-              <Link href={'/products' as Route}>Browse Products</Link>
+            <Button asChild variant="outline" size="lg">
+              <Link href="/products">Browse Products</Link>
             </Button>
           </div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section className="py-20">
+      <section className="py-24 my-24">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-gray-100 mb-4">
@@ -109,8 +100,8 @@ export default function HomePage() {
       </section>
 
       {/* Tech Stack Section */}
-      <section className="bg-gray-50 py-20">
-        <div className="container mx-auto px-4">
+      <section className="bg-gray-50 py-24 my-24">
+        <div className="container mx-auto px-4 my-24">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">
               Modern Tech Stack
@@ -147,7 +138,7 @@ export default function HomePage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20">
+      <section className="py-24 my-24">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold text-gray-100 mb-4">
             Ready to Start Learning?

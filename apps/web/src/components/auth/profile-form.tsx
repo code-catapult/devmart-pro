@@ -158,19 +158,19 @@ export function ProfileForm() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-gray-50 p-4 rounded-lg">
                 <p className="text-sm text-gray-600">Total Orders</p>
-                <p className="text-2xl font-bold">
+                <p className="text-2xl font-bold text-gray-600">
                   {profile._count?.orders || 0}
                 </p>
               </div>
               <div className="bg-gray-50 p-4 rounded-lg">
                 <p className="text-sm text-gray-600">Reviews Written</p>
-                <p className="text-2xl font-bold">
+                <p className="text-2xl font-bold text-gray-600">
                   {profile._count?.reviews || 0}
                 </p>
               </div>
               <div className="bg-gray-50 p-4 rounded-lg">
                 <p className="text-sm text-gray-600">Member Since</p>
-                <p className="text-sm font-medium">
+                <p className="text-sm font-medium text-gray-600">
                   {profile.createdAt
                     ? new Date(profile.createdAt).toLocaleDateString()
                     : 'N/A'}

@@ -75,7 +75,7 @@ function DashboardContent() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-8">
+      <div className="space-y-8 my-36">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
