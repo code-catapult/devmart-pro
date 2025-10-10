@@ -214,3 +214,20 @@ model Review {
   @@index([rating])
   @@map("reviews")
 }
+
+// Webhook event tracking for idempotency
+model WebhookEvent {
+  id            String   @id @default(cuid())
+  stripeEventId String   @unique @map("stripe_event_id") // Stripe's event ID
+  eventType     String   @map("event_type") // e.g., payment_intent.succeeded
+  processed     Boolean  @default(false)
+  processingError String? @map("processing_error") @db.Text
+  payload       Json     // Store the full event payload for debugging
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@index([stripeEventId])
+  @@index([eventType])
+  @@index([processed])
+  @@map("webhook_events")
+}
