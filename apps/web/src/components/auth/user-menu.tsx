@@ -21,6 +21,7 @@ import {
   LogOut,
   Shield,
   ChevronDown,
+  LayoutDashboard,
 } from 'lucide-react'
 
 export function UserMenu() {
@@ -104,6 +105,13 @@ export function UserMenu() {
           <Link href="/profile" className="flex items-center">
             <User className="mr-2 h-4 w-4" />
             Profile
+          </Link>
+        </DropdownMenuItem>
+
+        <DropdownMenuItem asChild>
+          <Link href="/dashboard" className="flex items-center">
+            <LayoutDashboard className="mr-2 h-4 w-4" />
+            Dashboard
           </Link>
         </DropdownMenuItem>
 
