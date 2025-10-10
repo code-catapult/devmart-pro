@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useCart } from '~/hooks/use-cart'
+import { api } from '~/utils/api'
 import { CheckoutStepper } from '~/components/checkout/checkout-stepper'
 import {
   ShippingForm,
@@ -11,6 +12,8 @@ import {
 import { PaymentForm } from '~/components/forms/payment-form'
 import { OrderSummary } from '~/components/cart/order-summary'
 import { redirect } from 'next/navigation'
+import { StripeProvider } from '~/components/providers/stripe-provider'
+import { Loader2 } from 'lucide-react'
 
 type CheckoutStep = 'shipping' | 'payment' | 'confirmation'
 
@@ -20,7 +23,6 @@ export default function CheckoutPage() {
   const [currentStep, setCurrentStep] = useState<CheckoutStep>('shipping')
   const [shippingAddress, setShippingAddress] =
     useState<ShippingFormData | null>(null)
-  const [_paymentIntentId, setPaymentIntentId] = useState<string | null>(null)
 
   // Redirect if cart is empty (check this first)
   if (items.length === 0) {
@@ -32,14 +34,25 @@ export default function CheckoutPage() {
     redirect('/auth/signin?callbackUrl=/checkout')
   }
 
+  // Create payment intent mutation
+  const createPaymentIntentMutation =
+    api.orders.createPaymentIntent.useMutation()
+
+  // Trigger payment intent creation when entering payment step
+  useEffect(() => {
+    if (
+      currentStep === 'payment' &&
+      !createPaymentIntentMutation.data &&
+      !createPaymentIntentMutation.isPending
+    ) {
+      createPaymentIntentMutation.mutate()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentStep])
+
   const handleShippingSubmit = (address: ShippingFormData) => {
     setShippingAddress(address)
     setCurrentStep('payment')
-  }
-
-  const handlePaymentSuccess = (intentId: string) => {
-    setPaymentIntentId(intentId)
-    // Will navigate to confirmation page
   }
 
   return (
@@ -58,11 +71,26 @@ export default function CheckoutPage() {
           )}
 
           {currentStep === 'payment' && shippingAddress && (
-            <PaymentForm
-              shippingAddress={shippingAddress}
-              onSuccess={handlePaymentSuccess}
-              onBack={() => setCurrentStep('shipping')}
-            />
+            <>
+              {createPaymentIntentMutation.isPending && (
+                <div className="flex items-center justify-center h-64 bg-white border rounded-lg">
+                  <Loader2 className="h-8 w-8 animate-spin" />
+                </div>
+              )}
+              {createPaymentIntentMutation.data?.clientSecret && (
+                <StripeProvider
+                  options={{
+                    clientSecret: createPaymentIntentMutation.data.clientSecret,
+                    appearance: { theme: 'stripe' },
+                  }}
+                >
+                  <PaymentForm
+                    shippingAddress={shippingAddress}
+                    onBack={() => setCurrentStep('shipping')}
+                  />
+                </StripeProvider>
+              )}
+            </>
           )}
         </div>
 

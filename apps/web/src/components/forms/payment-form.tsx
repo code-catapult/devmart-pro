@@ -1,61 +1,130 @@
 'use client'
 
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import { Button } from '~/components/ui/button'
-import { ArrowLeft } from 'lucide-react'
-import type { ShippingFormData } from './shipping-form'
+import { api } from '~/utils/api'
+import { toast } from 'sonner'
+import { Loader2 } from 'lucide-react'
+import { Route } from 'next'
+
+interface ShippingAddress {
+  name: string
+  address1: string
+  address2?: string
+  city: string
+  state: string
+  postalCode: string
+  country: string
+}
 
 interface PaymentFormProps {
-  shippingAddress: ShippingFormData
-  onSuccess: (paymentIntentId: string) => void
+  shippingAddress: ShippingAddress
   onBack: () => void
 }
 
-export function PaymentForm({
-  shippingAddress,
-  onSuccess,
-  onBack,
-}: PaymentFormProps) {
+export function PaymentForm({ shippingAddress, onBack }: PaymentFormProps) {
+  const stripe = useStripe()
+  const elements = useElements()
+  const router = useRouter()
+  const [isProcessing, setIsProcessing] = useState(false)
+
+  // Create order mutation
+  const createOrderMutation = api.orders.create.useMutation()
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!stripe || !elements) {
+      return
+    }
+
+    setIsProcessing(true)
+
+    try {
+      // Confirm payment with Stripe
+      const { error, paymentIntent: confirmedPayment } =
+        await stripe.confirmPayment({
+          elements,
+          confirmParams: {
+            return_url: `${window.location.origin}/checkout/confirmation`,
+          },
+          redirect: 'if_required', // Don't redirect if payment succeeds
+        })
+
+      if (error) {
+        toast.error('Payment failed', {
+          description: error.message,
+        })
+        setIsProcessing(false)
+        return
+      }
+
+      if (confirmedPayment.status === 'succeeded') {
+        // Create order
+        const order = await createOrderMutation.mutateAsync({
+          shippingAddress,
+          paymentIntentId: confirmedPayment.id,
+        })
+
+        // Navigate to confirmation
+        router.push(`/checkout/confirmation?orderId=${order.id}` as Route)
+      }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to process payment'
+      toast.error('Error', {
+        description: errorMessage,
+      })
+      setIsProcessing(false)
+    }
+  }
+
   return (
-    <div className="border rounded-lg p-6 space-y-6">
-      <div className="flex items-center gap-2">
-        <Button variant="ghost" size="sm" onClick={onBack}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="bg-white border rounded-lg p-6">
+        <h2 className="text-xl font-semibold mb-6">Payment Details</h2>
+
+        <PaymentElement
+          options={{
+            layout: 'tabs',
+          }}
+        />
+      </div>
+
+      <div className="flex gap-4">
+        <Button
+          type="button"
+          variant="outline"
+          size="lg"
+          onClick={onBack}
+          className="flex-1"
+          disabled={isProcessing}
+        >
           Back to Shipping
         </Button>
-      </div>
-
-      <div className="space-y-4">
-        <h2 className="text-xl font-semibold">Payment Information</h2>
-
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <p className="text-sm text-blue-800">
-            <strong>🚧 Placeholder Component</strong>
-          </p>
-          <p className="text-sm text-blue-700 mt-2">
-            Full Stripe payment integration will be implemented in Task 4. This
-            placeholder allows you to test the checkout navigation flow.
-          </p>
-        </div>
-
-        <div className="bg-gray-50 border rounded-lg p-4 space-y-2">
-          <p className="text-sm font-medium">Shipping To:</p>
-          <p className="text-sm text-muted-foreground">
-            {shippingAddress?.name}
-            <br />
-            {shippingAddress?.address1}
-            <br />
-            {shippingAddress?.city}, {shippingAddress?.state}{' '}
-            {shippingAddress?.postalCode}
-          </p>
-        </div>
 
         <Button
-          className="w-full"
-          onClick={() => onSuccess('placeholder-payment-intent-id')}
+          type="submit"
+          size="lg"
+          className="flex-1"
+          disabled={!stripe || isProcessing}
         >
-          Continue to Confirmation (Placeholder)
+          {isProcessing ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Processing...
+            </>
+          ) : (
+            'Complete Order'
+          )}
         </Button>
       </div>
-    </div>
+
+      <p className="text-xs text-center text-muted-foreground">
+        Your payment information is encrypted and secure
+      </p>
+    </form>
   )
 }
