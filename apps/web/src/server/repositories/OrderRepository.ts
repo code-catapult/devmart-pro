@@ -20,7 +20,7 @@ export class OrderRepository {
       price: number
     }>
   }) {
-    return await prisma.$transaction(async (tx) => {
+    return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // Create order
       const order = await tx.order.create({
         data: {

@@ -34,5 +34,9 @@
     "declaration.d.ts",
     "jest.config.js"
   ],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules"],
+  "references": [
+    { "path": "../../packages/ui" },
+    { "path": "../../packages/shared" }
+  ]
 }

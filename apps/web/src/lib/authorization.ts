@@ -1,4 +1,4 @@
-import { Role } from '@prisma/client'
+import { Role } from '@repo/shared/types'
 import { Session } from 'next-auth'
 
 export function hasRole(session: Session | null, requiredRole: Role): boolean {

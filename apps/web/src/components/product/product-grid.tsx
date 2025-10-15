@@ -1,4 +1,4 @@
-import { Product } from '@prisma/client'
+import { Product } from '@repo/shared/types'
 import { ProductCard } from './product-card'
 
 interface ProductGridProps {

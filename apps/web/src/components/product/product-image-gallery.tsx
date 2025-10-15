@@ -3,12 +3,7 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import { cn } from '~/lib/utils'
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  VisuallyHidden,
-} from '~/components/ui/dialog'
+import { Dialog, DialogContent, DialogTitle, VisuallyHidden } from '@repo/ui'
 import { ZoomIn } from 'lucide-react'
 
 interface ProductImageGalleryProps {

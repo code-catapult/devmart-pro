@@ -8,7 +8,7 @@ import {
   openCart,
 } from '~/store/slices/cartSlice'
 import { toast } from 'sonner'
-import type { Product } from '@prisma/client'
+import type { Product } from '@repo/shared/types'
 import { SerializeDates } from '~/lib/utils/serialize'
 
 export function useOptimisticCart() {

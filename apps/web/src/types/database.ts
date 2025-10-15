@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client'
+import { Prisma } from '@repo/shared/types'
 
 // Product with category and review count
 export type ProductWithCategory = Prisma.ProductGetPayload<{

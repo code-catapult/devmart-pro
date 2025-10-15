@@ -3,14 +3,15 @@
 import { Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import {
+  Alert,
+  AlertDescription,
+  Button,
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+} from '@repo/ui'
 import Link from 'next/link'
 
 const errorMessages: Record<string, string> = {

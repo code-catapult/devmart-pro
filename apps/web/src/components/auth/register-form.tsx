@@ -3,16 +3,17 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { signIn } from 'next-auth/react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import {
+  Alert,
+  AlertDescription,
+  Button,
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+  Input,
+} from '@repo/ui'
 import { api } from '@/utils/api'
 import { Route } from 'next'
 

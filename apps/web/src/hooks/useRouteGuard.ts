@@ -3,7 +3,7 @@
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { Role } from '@prisma/client'
+import { Role } from '@repo/shared/types'
 import { Route } from 'next'
 
 interface RouteGuardOptions {

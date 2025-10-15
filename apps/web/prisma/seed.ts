@@ -1,4 +1,9 @@
-import { PrismaClient, Role, ProductStatus, OrderStatus } from '@prisma/client'
+import {
+  PrismaClient,
+  Role,
+  ProductStatus,
+  OrderStatus,
+} from '@repo/shared/types'
 import { hash } from 'bcryptjs'
 
 const prisma = new PrismaClient()

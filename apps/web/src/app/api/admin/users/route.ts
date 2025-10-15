@@ -5,7 +5,7 @@ import {
   withRateLimit,
 } from '@/lib/middleware/auth-middleware'
 import { prisma } from '@/lib/prisma'
-import { Role } from '@prisma/client'
+import { Role } from '@repo/shared/types'
 
 // GET /api/admin/users
 async function getAllUsers(req: AuthenticatedRequest) {

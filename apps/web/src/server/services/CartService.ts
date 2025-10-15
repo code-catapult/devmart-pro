@@ -51,9 +51,12 @@ export class CartService {
   async calculateTotals(userId: string) {
     const cartItems = await cartRepository.findByUserId(userId)
 
-    const subtotal = cartItems.reduce((sum, item) => {
-      return sum + item.product.price * item.quantity
-    }, 0)
+    const subtotal = cartItems.reduce(
+      (sum: number, item: { product: { price: number }; quantity: number }) => {
+        return sum + item.product.price * item.quantity
+      },
+      0
+    )
 
     // Simple tax calculation (8%)
     const tax = Math.round(subtotal * 0.08)

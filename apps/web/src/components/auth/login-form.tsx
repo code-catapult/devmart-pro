@@ -4,16 +4,17 @@ import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import type { Route } from 'next'
 import { signIn, getSession } from 'next-auth/react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import {
+  Alert,
+  AlertDescription,
+  Button,
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+  Input,
+} from '@repo/ui'
 
 export function LoginForm() {
   const router = useRouter()

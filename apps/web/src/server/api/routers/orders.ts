@@ -5,6 +5,7 @@ import { orderRepository } from '~/server/repositories/OrderRepository'
 import { orderService } from '~/server/services/OrderService'
 import { paymentService } from '~/server/services/PaymentService'
 import { cartService } from '~/server/services/CartService'
+import type { OrderWithItems } from '~/types/database'
 
 const ShippingAddressSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -71,7 +72,7 @@ export const ordersRouter = createTRPCRouter({
    */
   getById: protectedProcedure
     .input(z.object({ orderId: z.string() }))
-    .query(async ({ ctx, input }) => {
+    .query(async ({ ctx, input }): Promise<OrderWithItems> => {
       const order = await orderRepository.findById(input.orderId)
 
       if (!order || order.userId !== ctx.session.user.id) {

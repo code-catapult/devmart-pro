@@ -1,25 +1,23 @@
 'use client'
 
-import { useForm } from 'react-hook-form'
+import { useForm, type ControllerRenderProps } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Button } from '~/components/ui/button'
 import {
+  Button,
+  Input,
   Form,
   FormControl,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
-} from '~/components/ui/form'
-import { Input } from '~/components/ui/input'
-import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '~/components/ui/select'
+} from '@repo/ui'
 
 const shippingSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -70,7 +68,11 @@ export function ShippingForm({ onSubmit, initialValues }: ShippingFormProps) {
             <FormField
               control={form.control}
               name="name"
-              render={({ field }) => (
+              render={({
+                field,
+              }: {
+                field: ControllerRenderProps<ShippingFormData, 'name'>
+              }) => (
                 <FormItem>
                   <FormLabel>Full Name</FormLabel>
                   <FormControl>
@@ -84,7 +86,11 @@ export function ShippingForm({ onSubmit, initialValues }: ShippingFormProps) {
             <FormField
               control={form.control}
               name="address1"
-              render={({ field }) => (
+              render={({
+                field,
+              }: {
+                field: ControllerRenderProps<ShippingFormData, 'address1'>
+              }) => (
                 <FormItem>
                   <FormLabel>Address Line 1</FormLabel>
                   <FormControl>
@@ -98,7 +104,11 @@ export function ShippingForm({ onSubmit, initialValues }: ShippingFormProps) {
             <FormField
               control={form.control}
               name="address2"
-              render={({ field }) => (
+              render={({
+                field,
+              }: {
+                field: ControllerRenderProps<ShippingFormData, 'address2'>
+              }) => (
                 <FormItem>
                   <FormLabel>Address Line 2 (Optional)</FormLabel>
                   <FormControl>
@@ -113,7 +123,11 @@ export function ShippingForm({ onSubmit, initialValues }: ShippingFormProps) {
               <FormField
                 control={form.control}
                 name="city"
-                render={({ field }) => (
+                render={({
+                  field,
+                }: {
+                  field: ControllerRenderProps<ShippingFormData, 'city'>
+                }) => (
                   <FormItem>
                     <FormLabel>City</FormLabel>
                     <FormControl>
@@ -127,7 +141,11 @@ export function ShippingForm({ onSubmit, initialValues }: ShippingFormProps) {
               <FormField
                 control={form.control}
                 name="state"
-                render={({ field }) => (
+                render={({
+                  field,
+                }: {
+                  field: ControllerRenderProps<ShippingFormData, 'state'>
+                }) => (
                   <FormItem>
                     <FormLabel>State</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
@@ -154,7 +172,11 @@ export function ShippingForm({ onSubmit, initialValues }: ShippingFormProps) {
               <FormField
                 control={form.control}
                 name="postalCode"
-                render={({ field }) => (
+                render={({
+                  field,
+                }: {
+                  field: ControllerRenderProps<ShippingFormData, 'postalCode'>
+                }) => (
                   <FormItem>
                     <FormLabel>Postal Code</FormLabel>
                     <FormControl>
@@ -168,7 +190,11 @@ export function ShippingForm({ onSubmit, initialValues }: ShippingFormProps) {
               <FormField
                 control={form.control}
                 name="country"
-                render={({ field }) => (
+                render={({
+                  field,
+                }: {
+                  field: ControllerRenderProps<ShippingFormData, 'country'>
+                }) => (
                   <FormItem>
                     <FormLabel>Country</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>

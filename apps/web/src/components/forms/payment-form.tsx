@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
-import { Button } from '~/components/ui/button'
+import { Button } from '@repo/ui'
 import { api } from '~/utils/api'
 import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'

@@ -1,6 +1,6 @@
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses'
 import type { orderRepository } from '../repositories/OrderRepository'
-import { formatPrice } from '~/lib/utils/price'
+import { formatPrice } from '@repo/shared/utils'
 
 // Constants
 const EMAIL_CONFIG = {

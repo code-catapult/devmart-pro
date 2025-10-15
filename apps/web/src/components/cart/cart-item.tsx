@@ -1,11 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { CartItem as CartItemType, Product } from '@prisma/client'
+import { CartItem as CartItemType, Product } from '@repo/shared/types'
 import { useOptimisticCart } from '~/hooks/use-optimistic-cart'
-import { Button } from '~/components/ui/button'
 import { Trash2, Minus, Plus } from 'lucide-react'
-import { formatPrice } from '~/lib/utils/price'
+import { formatPrice } from '@repo/shared/utils'
 import { SerializeDates } from '~/lib/utils/serialize'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -19,7 +18,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '~/components/ui/alert-dialog'
+  Button,
+} from '@repo/ui'
 
 interface CartItemProps {
   item: SerializeDates<CartItemType & { product: Product }>

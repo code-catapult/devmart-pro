@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { hash } from 'bcryptjs'
 import { createTRPCRouter, publicProcedure } from '../trpc'
 import { prisma } from '~/lib/prisma'
-import { Role } from '@prisma/client'
+import { Role } from '@repo/shared/types'
 import crypto from 'crypto'
 import { sendPasswordResetEmail } from '~/lib/email'
 

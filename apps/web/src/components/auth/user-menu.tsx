@@ -4,16 +4,19 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { Route } from 'next'
 import { useAuth } from '@/hooks/useAuth'
-import { Button } from '@/components/ui/button'
+
 import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+  Button,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+} from '@repo/ui'
 import {
   User,
   Settings,

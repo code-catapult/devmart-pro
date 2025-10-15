@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
-import { Role } from '@prisma/client'
+import { Role } from '@repo/shared/types'
 
 interface AuthUser {
   id: string

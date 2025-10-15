@@ -1,12 +1,11 @@
 import { notFound } from 'next/navigation'
 import { api } from '~/trpc/server'
-import { formatPrice } from '~/lib/utils/price'
-import { Button } from '~/components/ui/button'
-import { Badge } from '~/components/ui/badge'
+import { formatPrice } from '@repo/shared/utils'
+import { Badge, Button } from '@repo/ui'
 import { Check, Package, CreditCard, MapPin, Calendar } from 'lucide-react'
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import { OrderStatus } from '@prisma/client'
+import { OrderStatus } from '@repo/shared/types'
 import { ProductImage } from './product-image'
 
 // Type for shipping address to match our schema

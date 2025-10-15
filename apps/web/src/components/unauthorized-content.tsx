@@ -1,13 +1,14 @@
 'use client'
 
 import {
+  Button,
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
+} from '@repo/ui'
+
 import { Shield, Home, ArrowLeft, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'

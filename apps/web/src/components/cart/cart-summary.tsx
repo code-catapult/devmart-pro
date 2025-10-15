@@ -1,9 +1,8 @@
 'use client'
 
 import { useCart } from '~/hooks/use-cart'
-import { Button } from '~/components/ui/button'
-import { Separator } from '~/components/ui/separator'
-import { formatPrice } from '~/lib/utils/price'
+import { Button, Separator } from '@repo/ui'
+import { formatPrice } from '@repo/shared/utils'
 import Link from 'next/link'
 import { Route } from 'next'
 

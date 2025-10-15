@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
-import { Role } from '@prisma/client'
+import { Role } from '@repo/shared/types'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 

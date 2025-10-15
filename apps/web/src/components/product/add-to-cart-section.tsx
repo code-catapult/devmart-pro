@@ -1,8 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { Product } from '@prisma/client'
-import { Button } from '~/components/ui/button'
+import { Product } from '@repo/shared/types'
+import { Button } from '@repo/ui'
 import { Minus, Plus, ShoppingCart } from 'lucide-react'
 import { useOptimisticCart } from '~/hooks/use-optimistic-cart'
 import { serializeDates } from '~/lib/utils/serialize'

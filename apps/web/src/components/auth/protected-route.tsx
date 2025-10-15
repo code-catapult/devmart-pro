@@ -3,16 +3,17 @@
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { Role } from '@prisma/client'
-import { LoadingSpinner } from '@/components/ui/loading-spinner'
+import { Role } from '@repo/shared/types'
+
 import {
+  Button,
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
+  LoadingSpinner,
+} from '@repo/ui'
 import { Shield } from 'lucide-react'
 import Link from 'next/link'
 import { Route } from 'next'

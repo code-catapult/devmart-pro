@@ -1,7 +1,7 @@
 'use client'
 
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { Button } from './button'
+import { Button } from '@repo/ui'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { Route } from 'next'
 import { useTransition } from 'react'
