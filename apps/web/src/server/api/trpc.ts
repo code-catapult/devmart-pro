@@ -2,8 +2,10 @@ import { initTRPC, TRPCError } from '@trpc/server'
 import { getServerSession } from 'next-auth/next'
 import { type FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch'
 import { authOptions } from '@/lib/auth'
+import { prisma } from '~/lib/prisma'
 import { Role } from '@repo/shared/types'
 import { z, ZodError } from 'zod'
+import superjson from 'superjson'
 
 /**
  * 1. CONTEXT
@@ -17,6 +19,7 @@ export const createTRPCContext = async (_opts: FetchCreateContextFnOptions) => {
   return {
     session,
     user: session?.user || null, // User is null if not authenticated
+    prisma,
   }
 }
 
@@ -25,10 +28,7 @@ export const createTRPCContext = async (_opts: FetchCreateContextFnOptions) => {
  * This is where the tRPC API is initialized, connecting the context and transformer.
  */
 const t = initTRPC.context<typeof createTRPCContext>().create({
-  transformer: {
-    serialize: JSON.stringify,
-    deserialize: JSON.parse,
-  },
+  transformer: superjson,
   errorFormatter({ shape, error }) {
     return {
       ...shape,
