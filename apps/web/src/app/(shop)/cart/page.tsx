@@ -3,7 +3,7 @@
 import { useCart } from '~/hooks/use-cart'
 import { CartItem as CartItemComponent } from '~/components/cart/cart-item'
 import { CartSummary } from '~/components/cart/cart-summary'
-import { Button } from '~/components/ui/button'
+import { Button } from '@repo/ui'
 import Link from 'next/link'
 import { ShoppingBag, ArrowRight } from 'lucide-react'
 

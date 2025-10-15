@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from '@repo/shared/types'
 
 // Define global PrismaClient variable
 const globalForPrisma = globalThis as unknown as {

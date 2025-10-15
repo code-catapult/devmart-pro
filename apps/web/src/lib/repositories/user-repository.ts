@@ -1,5 +1,5 @@
 import { prisma } from '../prisma'
-import { Role } from '@prisma/client'
+import { Role } from '@repo/shared/types'
 
 export class UserRepository {
   // Create new user

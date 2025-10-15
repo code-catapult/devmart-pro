@@ -1,28 +1,35 @@
 'use client'
 
-import React from 'react'
-import { Button } from '@/components/ui/button'
 import {
+  ReactNode,
+  ComponentType,
+  Component,
+  ErrorInfo,
+  useState,
+  useCallback,
+} from 'react'
+import {
+  Button,
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card'
+} from '@repo/ui'
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react'
 
 interface ErrorBoundaryState {
   hasError: boolean
   error?: Error
-  errorInfo?: React.ErrorInfo
+  errorInfo?: ErrorInfo
 }
 
 interface ErrorBoundaryProps {
-  children: React.ReactNode
-  fallback?: React.ComponentType<{ error: Error; retry: () => void }>
+  children: ReactNode
+  fallback?: ComponentType<{ error: Error; retry: () => void }>
 }
 
-export class GlobalErrorBoundary extends React.Component<
+export class GlobalErrorBoundary extends Component<
   ErrorBoundaryProps,
   ErrorBoundaryState
 > {
@@ -139,9 +146,9 @@ function DefaultErrorFallback({ error, onRetry }: DefaultErrorFallbackProps) {
 
 // Hook for functional components to trigger error boundary
 export function useErrorBoundary() {
-  const [, setState] = React.useState()
+  const [, setState] = useState()
 
-  return React.useCallback((error: Error) => {
+  return useCallback((error: Error) => {
     setState(() => {
       throw error
     })
@@ -149,7 +156,7 @@ export function useErrorBoundary() {
 }
 
 // Specific error boundaries for different sections
-export function APIErrorBoundary({ children }: { children: React.ReactNode }) {
+export function APIErrorBoundary({ children }: { children: ReactNode }) {
   return (
     <GlobalErrorBoundary
       fallback={({ retry }) => (

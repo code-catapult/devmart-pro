@@ -1,5 +1,5 @@
 import { prisma } from '../prisma'
-import { ProductStatus, Prisma } from '@prisma/client'
+import { ProductStatus, Prisma } from '@repo/shared/types'
 
 export class ProductRepository {
   // Get all active products with category information
@@ -105,7 +105,10 @@ export class ProductRepository {
 
     if (!category) return null
 
-    const categoryIds = [category.id, ...category.children.map((c) => c.id)]
+    const categoryIds = [
+      category.id,
+      ...category.children.map((c: { id: string }) => c.id),
+    ]
 
     const products = await prisma.product.findMany({
       where: {

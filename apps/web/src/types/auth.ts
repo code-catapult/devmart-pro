@@ -1,5 +1,5 @@
 import { DefaultSession, DefaultUser } from 'next-auth'
-import { Role } from '@prisma/client'
+import { Role } from '@repo/shared/types'
 
 // Extend the built-in next-auth types
 

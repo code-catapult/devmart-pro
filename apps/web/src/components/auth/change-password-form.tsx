@@ -2,16 +2,17 @@
 
 import { useState } from 'react'
 import { useSession } from 'next-auth/react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import {
+  Alert,
+  AlertDescription,
+  Button,
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+  Input,
+} from '@repo/ui'
 
 export function ChangePasswordForm() {
   const { update } = useSession()

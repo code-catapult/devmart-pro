@@ -5,7 +5,7 @@ import {
 } from '@/lib/middleware/auth-middleware'
 import { prisma } from '@/lib/prisma'
 import { UserRepository } from '@/lib/repositories/user-repository'
-import { Role } from '@prisma/client'
+import { Role } from '@repo/shared/types'
 import { hash } from 'bcryptjs'
 import { z } from 'zod'
 

@@ -1,6 +1,6 @@
-import { Product, Category } from '@prisma/client'
-import { Badge } from '~/components/ui/badge'
-import { formatPrice } from '~/lib/utils/price'
+import { Product, Category } from '@repo/shared/types'
+import { Badge } from '@repo/ui'
+import { formatPrice } from '@repo/shared/utils'
 
 interface ProductInfoProps {
   product: Product & {

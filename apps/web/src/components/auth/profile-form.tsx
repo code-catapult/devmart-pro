@@ -2,16 +2,18 @@
 
 import { useState, useEffect } from 'react'
 import { useUserProfile } from '@/hooks/useUserProfile'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+
 import {
+  Alert,
+  AlertDescription,
+  Button,
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+  Input,
+} from '@repo/ui'
 
 export function ProfileForm() {
   const { profile, updateProfile, isUpdating, updateError, profileLoading } =

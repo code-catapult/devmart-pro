@@ -1,12 +1,13 @@
-import { Button } from '@/components/ui/button'
 import {
+  Badge,
+  Button,
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+} from '@repo/ui'
+
 import Link from 'next/link'
 import { ShoppingBag, Users, Shield, Zap } from 'lucide-react'
 import { Route } from 'next'

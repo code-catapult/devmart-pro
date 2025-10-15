@@ -4,16 +4,16 @@ import { useCart } from '~/hooks/use-cart'
 import { useOptimisticCart } from '~/hooks/use-optimistic-cart'
 import { closeCart } from '~/store/slices/cartSlice'
 import {
+  Button,
+  ScrollArea,
+  Separator,
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
   SheetDescription,
-} from '~/components/ui/sheet'
-import { Button } from '~/components/ui/button'
-import { ScrollArea } from '~/components/ui/scroll-area'
-import { Separator } from '~/components/ui/separator'
-import { formatPrice } from '~/lib/utils/price'
+} from '@repo/ui'
+import { formatPrice } from '@repo/shared/utils'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Trash2, ShoppingBag } from 'lucide-react'

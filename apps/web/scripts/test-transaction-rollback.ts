@@ -45,7 +45,10 @@ async function testRollback() {
         throw new Error('Simulated error!')
       })
     } catch (error) {
-      console.log('Transaction rolled back:', error.message)
+      console.log(
+        'Transaction rolled back:',
+        error instanceof Error ? error.message : String(error)
+      )
     }
 
     // Verify order NOT in database

@@ -1,9 +1,8 @@
-import { Input } from '~/components/ui/input'
 import { Search, X } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { useDebounce } from '~/hooks/use-debounce'
-import { Button } from '~/components/ui/button'
+import { Button, Input } from '@repo/ui'
 
 export function ProductSearch() {
   const router = useRouter()
@@ -44,7 +43,9 @@ export function ProductSearch() {
         type="text"
         placeholder="Search products..."
         value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+          setSearchTerm(e.target.value)
+        }
         className="pl-10 pr-10"
       />
       {searchTerm && (

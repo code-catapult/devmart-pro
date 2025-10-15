@@ -2,7 +2,7 @@ import { orderRepository } from '../repositories/OrderRepository'
 import { cartService } from './CartService'
 import { emailService } from './EmailService'
 import { TRPCError } from '@trpc/server'
-import { Prisma } from '@prisma/client'
+import { Prisma } from '@repo/shared/types'
 import { prisma } from '~/lib/prisma'
 
 export class OrderService {
@@ -47,11 +47,16 @@ export class OrderService {
       shipping: cart.shipping,
       total: cart.total,
       stripePaymentIntentId: paymentIntentId,
-      items: cart.items.map((item) => ({
-        productId: item.product.id,
-        quantity: item.quantity,
-        price: item.product.price,
-      })),
+      items: cart.items.map(
+        (item: {
+          product: { id: string; price: number }
+          quantity: number
+        }) => ({
+          productId: item.product.id,
+          quantity: item.quantity,
+          price: item.product.price,
+        })
+      ),
     })
 
     if (!order) {

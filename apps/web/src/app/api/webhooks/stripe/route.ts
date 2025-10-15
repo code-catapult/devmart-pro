@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 import { stripe } from '~/lib/stripe'
 import { prisma } from '~/lib/prisma'
 import Stripe from 'stripe'
-import { OrderStatus, Prisma } from '@prisma/client'
+import { OrderStatus, Prisma } from '@repo/shared/types'
 
 /**
  * Logger utility for structured webhook logging

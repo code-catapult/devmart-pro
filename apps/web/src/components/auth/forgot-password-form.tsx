@@ -1,16 +1,17 @@
 'use client'
 
 import { useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import {
+  Alert,
+  AlertDescription,
+  Button,
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+  Input,
+} from '@repo/ui'
 import { api } from '@/utils/api'
 
 export function ForgotPasswordForm() {
@@ -94,7 +95,7 @@ export function ForgotPasswordForm() {
               type="email"
               placeholder="Enter your email"
               value={email}
-              onChange={(e) => {
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                 setEmail(e.target.value)
                 setError('')
               }}

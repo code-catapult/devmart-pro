@@ -2,7 +2,7 @@ import { initTRPC, TRPCError } from '@trpc/server'
 import { getServerSession } from 'next-auth/next'
 import { type FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch'
 import { authOptions } from '@/lib/auth'
-import { Role } from '@prisma/client'
+import { Role } from '@repo/shared/types'
 import { z, ZodError } from 'zod'
 
 // Create context for tRPC requests

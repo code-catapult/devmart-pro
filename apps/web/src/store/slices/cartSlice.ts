@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
-import { Product, CartItem } from '@prisma/client'
+import { Product, CartItem } from '@repo/shared/types'
 
 // Serializable versions with Date objects converted to strings for Redux
 type SerializableProduct = Omit<Product, 'createdAt' | 'updatedAt'> & {

@@ -1,8 +1,8 @@
 'use client'
 
 import { useCart } from '~/hooks/use-cart'
-import { Separator } from '~/components/ui/separator'
-import { formatPrice } from '~/lib/utils/price'
+import { Separator } from '@repo/ui'
+import { formatPrice } from '@repo/shared/utils'
 import { ShoppingCart } from 'lucide-react'
 
 export function OrderSummary() {

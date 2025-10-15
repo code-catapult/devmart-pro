@@ -1,9 +1,8 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { Product } from '@prisma/client'
-import { Card, CardContent } from '~/components/ui/card'
-import { Badge } from '~/components/ui/badge'
-import { formatPrice } from '~/lib/utils/price'
+import { Product } from '@repo/shared/types'
+import { Badge, Card, CardContent } from '@repo/ui'
+import { formatPrice } from '@repo/shared/utils'
 import { Route } from 'next'
 
 interface ProductCardProps {

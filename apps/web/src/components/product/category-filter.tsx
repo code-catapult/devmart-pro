@@ -2,8 +2,7 @@
 
 import { api } from '~/utils/api'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Button } from '~/components/ui/button'
-import { Badge } from '~/components/ui/badge'
+import { Badge, Button } from '@repo/ui'
 
 export function CategoryFilter() {
   const router = useRouter()

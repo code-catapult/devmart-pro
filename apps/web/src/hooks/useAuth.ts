@@ -4,7 +4,7 @@ import { useSession, signIn, signOut } from 'next-auth/react'
 import { useAppDispatch, useAppSelector } from '@/store'
 import { setUser, clearAuth, setLoading } from '@/store/slices/authSlice'
 import { useEffect } from 'react'
-import { Role } from '@prisma/client'
+import { Role } from '@repo/shared/types'
 
 export function useAuth() {
   const { data: session, status } = useSession()
