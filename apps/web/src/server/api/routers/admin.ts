@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { createTRPCRouter, adminProcedure } from '~/server/api/trpc'
 import { adminService } from '~/server/services/AdminService'
 import { TRPCError } from '@trpc/server'
+import { OrderStatus } from '@repo/shared/types'
 
 /**
  * Admin Router
@@ -126,13 +127,7 @@ export const adminRouter = createTRPCRouter({
     .input(
       z.object({
         orderId: z.cuid2(), // ← Validate CUID format
-        status: z.enum([
-          'PENDING',
-          'PROCESSING',
-          'SHIPPED',
-          'DELIVERED',
-          'CANCELLED',
-        ]),
+        status: z.enum(OrderStatus),
       })
     )
     .mutation(async ({ input, ctx }) => {

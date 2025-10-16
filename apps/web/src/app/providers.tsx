@@ -6,6 +6,7 @@ import { useState } from 'react'
 import { api } from '~/utils/api'
 import { StoreProvider } from '~/store/StoreProvider'
 import { SessionProvider } from '~/components/SessionProvider'
+import superjson from 'superjson'
 
 function getBaseUrl() {
   if (typeof window !== 'undefined') return ''
@@ -20,10 +21,7 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
       links: [
         httpBatchLink({
           url: `${getBaseUrl()}/api/trpc`,
-          transformer: {
-            serialize: JSON.stringify,
-            deserialize: JSON.parse,
-          },
+          transformer: superjson,
         }),
       ],
     })

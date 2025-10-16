@@ -1,7 +1,7 @@
 'use client'
 
 import { DollarSign, ShoppingCart, Package, Users } from 'lucide-react'
-import { api } from '@/utils/api'
+import { api } from '~/utils/api'
 import { Card, CardContent, CardHeader, CardTitle, Skeleton } from '@repo/ui'
 import { formatPrice } from '@repo/shared/utils'
 

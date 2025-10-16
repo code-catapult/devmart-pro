@@ -2,9 +2,9 @@ import { NextResponse } from 'next/server'
 import {
   withAdmin,
   AuthenticatedRequest,
-} from '@/lib/middleware/auth-middleware'
-import { prisma } from '@/lib/prisma'
-import { UserRepository } from '@/lib/repositories/user-repository'
+} from '~/lib/middleware/auth-middleware'
+import { prisma } from '~/lib/prisma'
+import { UserRepository } from '~/lib/repositories/user-repository'
 import { Role } from '@repo/shared/types'
 import { hash } from 'bcryptjs'
 import { z } from 'zod'

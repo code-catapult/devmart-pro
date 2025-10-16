@@ -2,13 +2,13 @@ import { NextResponse } from 'next/server'
 import {
   withAuth,
   AuthenticatedRequest,
-} from '@/lib/middleware/auth-middleware'
+} from '~/lib/middleware/auth-middleware'
 import { compare, hash } from 'bcryptjs'
-import { UserRepository } from '@/lib/repositories/user-repository'
-import { prisma } from '@/lib/prisma'
+import { UserRepository } from '~/lib/repositories/user-repository'
+import { prisma } from '~/lib/prisma'
 import { z } from 'zod'
 import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { authOptions } from '~/lib/auth'
 
 // PUT /api/user/password
 async function changePassword(req: AuthenticatedRequest) {

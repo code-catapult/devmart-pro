@@ -19,31 +19,38 @@ export class AdminService {
    */
   async calculateDashboardMetrics() {
     // Run all aggregations in parallel for performance
-    const [salesResult, ordersCount, productsCount, usersCount] =
-      await Promise.all([
-        // Total sales from delivered orders
-        prisma.order.aggregate({
-          where: { status: 'DELIVERED' },
-          _sum: { total: true },
-        }),
+    try {
+      const [salesResult, ordersCount, productsCount, usersCount] =
+        await Promise.all([
+          // Total sales from delivered orders
+          prisma.order.aggregate({
+            where: { status: 'DELIVERED' },
+            _sum: { total: true },
+          }),
 
-        // Total order count (all statuses)
-        prisma.order.count(),
+          // Total order count (all statuses)
+          prisma.order.count(),
 
-        // Active products only
-        prisma.product.count({
-          where: { status: 'ACTIVE' },
-        }),
+          // Active products only
+          prisma.product.count({
+            where: { status: 'ACTIVE' },
+          }),
 
-        // Total user count
-        prisma.user.count(),
-      ])
+          // Total user count
+          prisma.user.count(),
+        ])
 
-    return {
-      totalSales: salesResult._sum.total ?? 0, // In cents, handle null
-      totalOrders: ordersCount,
-      totalProducts: productsCount,
-      totalUsers: usersCount,
+      return {
+        totalSales: Number(salesResult._sum.total ?? 0), // In cents, handle null
+        totalOrders: ordersCount,
+        totalProducts: productsCount,
+        totalUsers: usersCount,
+      }
+    } catch (error) {
+      // Log error for monitoring
+      console.error('Failed to calculate dashboard metrics:', error)
+      // Re-throw with context
+      throw new Error('Failed to calculate dashboard metrics')
     }
   }
 
@@ -61,35 +68,37 @@ export class AdminService {
     // Calculate offset for pagination
     const skip = (page - 1) * limit
 
-    // Fetch orders with user and order items
-    const orders = await prisma.order.findMany({
-      take: limit,
-      skip,
-      orderBy: { createdAt: 'desc' }, // Newest first
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
+    const [orders, totalCount] = await Promise.all([
+      // Fetch orders with user and order items
+      prisma.order.findMany({
+        take: limit,
+        skip,
+        orderBy: { createdAt: 'desc' }, // Newest first
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
           },
-        },
-        orderItems: {
-          include: {
-            product: {
-              select: {
-                id: true,
-                name: true,
-                price: true,
+          orderItems: {
+            include: {
+              product: {
+                select: {
+                  id: true,
+                  name: true,
+                  price: true,
+                },
               },
             },
           },
         },
-      },
-    })
+      }),
 
-    // Get total count for pagination metadata
-    const totalCount = await prisma.order.count()
+      // Get total count for pagination metadata
+      prisma.order.count(),
+    ])
 
     return {
       orders,
