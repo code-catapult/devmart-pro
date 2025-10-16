@@ -5,6 +5,9 @@ import { prisma } from './prisma'
 import { Role } from '@repo/shared/types'
 import '~/types/auth'
 
+const REGULAR_USER_SESSION_DURATION = 30 * 24 * 60 * 60 // 30 days
+const ADMIN_SESSION_DURATION = 8 * 60 * 60 // 8 hours
+
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
@@ -69,7 +72,7 @@ export const authOptions: NextAuthOptions = {
   ],
   session: {
     strategy: 'jwt',
-    maxAge: 24 * 60 * 60, // 24 hours
+    maxAge: REGULAR_USER_SESSION_DURATION, // 24 hours
     updateAge: 60 * 60, // Update session every 1 hour (token refresh)
   },
   jwt: {
@@ -101,11 +104,20 @@ export const authOptions: NextAuthOptions = {
         token.role = user.role
         token.email = user.email?.toLowerCase()
         token.lastPasswordChange = user.lastPasswordChange
+
+        // Set custom expiration based on role
+        const now = Math.floor(Date.now() / 1000)
+        if (user.role === 'ADMIN') {
+          token.exp = now + ADMIN_SESSION_DURATION // 8 hours for admins
+          console.log('✅ Admin session created, expires in 8 hours')
+        } else {
+          token.exp = now + REGULAR_USER_SESSION_DURATION // 30 days for users
+          console.log('✅ User session created, expires in 30 days')
+        }
       }
 
-      // Handle token updates (e.g., profile changes, role changes, password changes, etc.)
+      // Handle token updates
       if (trigger === 'update' && token.id) {
-        // Refresh user data from database
         const refreshedUser = await prisma.user.findUnique({
           where: { id: token.id as string },
           select: {
@@ -121,6 +133,14 @@ export const authOptions: NextAuthOptions = {
           token.email = refreshedUser.email
           token.role = refreshedUser.role
           token.lastPasswordChange = refreshedUser.lastPasswordChange
+
+          // Re-set expiration on token refresh
+          const now = Math.floor(Date.now() / 1000)
+          if (refreshedUser.role === 'ADMIN') {
+            token.exp = now + ADMIN_SESSION_DURATION
+          } else {
+            token.exp = now + REGULAR_USER_SESSION_DURATION
+          }
         }
       }
 
