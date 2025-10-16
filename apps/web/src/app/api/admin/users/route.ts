@@ -3,8 +3,8 @@ import {
   withAdmin,
   AuthenticatedRequest,
   withRateLimit,
-} from '@/lib/middleware/auth-middleware'
-import { prisma } from '@/lib/prisma'
+} from '~/lib/middleware/auth-middleware'
+import { prisma } from '~/lib/prisma'
 import { Role } from '@repo/shared/types'
 
 // GET /api/admin/users

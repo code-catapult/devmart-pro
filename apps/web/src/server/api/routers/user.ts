@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { createTRPCRouter, protectedProcedure, adminProcedure } from '../trpc'
-import { prisma } from '@/lib/prisma'
+import { prisma } from '~/lib/prisma'
 import { Role } from '@repo/shared/types'
 
 export const userRouter = createTRPCRouter({

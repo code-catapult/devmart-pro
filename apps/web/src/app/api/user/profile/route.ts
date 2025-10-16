@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server'
 import {
   withAuth,
   AuthenticatedRequest,
-} from '@/lib/middleware/auth-middleware'
-import { prisma } from '@/lib/prisma'
+} from '~/lib/middleware/auth-middleware'
+import { prisma } from '~/lib/prisma'
 import { z } from 'zod'
 
 // GET /api/user/profile

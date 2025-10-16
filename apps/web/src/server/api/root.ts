@@ -8,6 +8,7 @@ import { productsRouter } from './routers/products'
 import { categoriesRouter } from './routers/categories'
 import { cartRouter } from './routers/cart'
 import { ordersRouter } from './routers/orders'
+import { adminRouter } from './routers/admin'
 
 export const appRouter = createTRPCRouter({
   health: healthRouter,
@@ -17,6 +18,7 @@ export const appRouter = createTRPCRouter({
   categories: categoriesRouter,
   cart: cartRouter,
   orders: ordersRouter,
+  admin: adminRouter,
 })
 
 // Export type definition of API
