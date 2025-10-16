@@ -1,3 +1,5 @@
+'use client'
+
 import { Suspense } from 'react'
 import { MetricsCards } from '~/components/admin/metrics-cards'
 import { RecentOrdersList } from '~/components/admin/recent-orders-list'

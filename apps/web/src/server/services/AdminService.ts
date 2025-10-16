@@ -1,4 +1,5 @@
 import { prisma } from '~/lib/prisma'
+import { getCachedData } from '~/lib/cache'
 
 /**
  * AdminService
@@ -18,40 +19,39 @@ export class AdminService {
    * @returns Dashboard metrics object
    */
   async calculateDashboardMetrics() {
-    // Run all aggregations in parallel for performance
-    try {
-      const [salesResult, ordersCount, productsCount, usersCount] =
-        await Promise.all([
-          // Total sales from delivered orders
-          prisma.order.aggregate({
-            where: { status: 'DELIVERED' },
-            _sum: { total: true },
-          }),
+    return getCachedData(
+      'admin:metrics', // Cache key
+      async () => {
+        // Run all aggregations in parallel for performance
+        const [salesResult, ordersCount, productsCount, usersCount] =
+          await Promise.all([
+            // Total sales from delivered orders
+            prisma.order.aggregate({
+              where: { status: 'DELIVERED' },
+              _sum: { total: true },
+            }),
 
-          // Total order count (all statuses)
-          prisma.order.count(),
+            // Total order count (all statuses)
+            prisma.order.count(),
 
-          // Active products only
-          prisma.product.count({
-            where: { status: 'ACTIVE' },
-          }),
+            // Active products only
+            prisma.product.count({
+              where: { status: 'ACTIVE' },
+            }),
 
-          // Total user count
-          prisma.user.count(),
-        ])
+            // Total user count
+            prisma.user.count(),
+          ])
 
-      return {
-        totalSales: Number(salesResult._sum.total ?? 0), // In cents, handle null
-        totalOrders: ordersCount,
-        totalProducts: productsCount,
-        totalUsers: usersCount,
-      }
-    } catch (error) {
-      // Log error for monitoring
-      console.error('Failed to calculate dashboard metrics:', error)
-      // Re-throw with context
-      throw new Error('Failed to calculate dashboard metrics')
-    }
+        return {
+          totalSales: salesResult._sum.total ?? 0,
+          totalOrders: ordersCount,
+          totalProducts: productsCount,
+          totalUsers: usersCount,
+        }
+      },
+      300 // 5 minute TTL (300 seconds)
+    )
   }
 
   /**
@@ -129,33 +129,43 @@ export class AdminService {
     startDate?: Date,
     endDate?: Date
   ) {
-    // Default to last 30 days if no dates provided
-    const end = endDate ?? new Date()
-    const start =
-      startDate ?? new Date(end.getTime() - 30 * 24 * 60 * 60 * 1000)
+    // Create cache key with parameters (different params = different cache)
+    const start = startDate?.toISOString() ?? 'default'
+    const end = endDate?.toISOString() ?? 'default'
+    const cacheKey = `admin:analytics:${period}:${start}:${end}`
 
-    // Fetch delivered orders in date range
-    const orders = await prisma.order.findMany({
-      where: {
-        status: 'DELIVERED',
-        createdAt: {
-          gte: start,
-          lte: end,
-        },
-      },
-      select: {
-        createdAt: true,
-        total: true,
-      },
-      orderBy: {
-        createdAt: 'asc',
-      },
-    })
+    return getCachedData(
+      cacheKey,
+      async () => {
+        // Default to last 30 days if no dates provided
+        const endDateFinal = endDate ?? new Date()
+        const startDateFinal =
+          startDate ??
+          new Date(endDateFinal.getTime() - 30 * 24 * 60 * 60 * 1000)
 
-    // Group by period and sum totals
-    const grouped = this.groupOrdersByPeriod(orders, period)
+        // Fetch delivered orders in date range
+        const orders = await prisma.order.findMany({
+          where: {
+            status: 'DELIVERED',
+            createdAt: {
+              gte: startDateFinal,
+              lte: endDateFinal,
+            },
+          },
+          select: {
+            createdAt: true,
+            total: true,
+          },
+          orderBy: {
+            createdAt: 'asc',
+          },
+        })
 
-    return grouped
+        // Group by period and sum totals
+        return this.groupOrdersByPeriod(orders, period)
+      },
+      600 // 10 minute TTL (600 seconds)
+    )
   }
 
   /**
@@ -181,13 +191,19 @@ export class AdminService {
       let periodKey: string
 
       if (period === 'daily') {
-        periodKey = order.createdAt.toISOString().split('T')[0] // YYYY-MM-DD
+        // Daily: YYYY-MM-DD
+        periodKey = order.createdAt.toISOString().split('T')[0]
       } else if (period === 'weekly') {
-        // Get Monday of the week
+        // Weekly: Get Monday of the week (ISO 8601 standard)
         const date = new Date(order.createdAt)
-        const day = date.getDay()
-        const diff = date.getDate() - day + (day === 0 ? -6 : 1) // Adjust to Monday
-        const monday = new Date(date.setDate(diff))
+        const day = date.getDay() // 0 = Sunday, 1 = Monday, etc.
+
+        // Calculate days to subtract to get to Monday
+        const daysToMonday = day === 0 ? 6 : day - 1 // Sunday: go back 6 days
+        const mondayDate = date.getDate() - daysToMonday
+
+        const monday = new Date(date)
+        monday.setDate(mondayDate)
         periodKey = monday.toISOString().split('T')[0]
       } else {
         // Monthly: YYYY-MM
@@ -224,27 +240,35 @@ export class AdminService {
    * @returns Low inventory products with category info
    */
   async fetchLowInventoryProducts(threshold: number = 10) {
-    const products = await prisma.product.findMany({
-      where: {
-        status: 'ACTIVE',
-        inventory: {
-          lte: threshold, // Less than or equal to threshold
-        },
-      },
-      orderBy: {
-        inventory: 'asc', // Lowest inventory first (highest priority)
-      },
-      include: {
-        category: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-      },
-    })
+    const cacheKey = `admin:inventory:${threshold}`
 
-    return products
+    return getCachedData(
+      cacheKey,
+      async () => {
+        const products = await prisma.product.findMany({
+          where: {
+            status: 'ACTIVE',
+            inventory: {
+              lte: threshold,
+            },
+          },
+          orderBy: {
+            inventory: 'asc', // Lowest inventory first
+          },
+          include: {
+            category: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        })
+
+        return products
+      },
+      300 // 5 minute TTL
+    )
   }
 }
 

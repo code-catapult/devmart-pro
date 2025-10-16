@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { createTRPCRouter, adminProcedure } from '~/server/api/trpc'
 import { adminService } from '~/server/services/AdminService'
+import { invalidateCacheKey, invalidateCache } from '~/lib/cache'
 import { TRPCError } from '@trpc/server'
 import { OrderStatus } from '@repo/shared/types'
 
@@ -147,8 +148,19 @@ export const adminRouter = createTRPCRouter({
           },
         })
 
-        // TODO: Invalidate cache in Task 12
-        // TODO: Send status update email in future story
+        // Invalidate affected caches
+        // Run invalidations in parallel, but don't fail mutation if invalidation fails
+        await Promise.all([
+          invalidateCacheKey('admin:metrics'), // Dashboard KPIs affected
+          invalidateCache('admin:analytics:*'), // Sales analytics affected (if DELIVERED)
+          // Note: Don't invalidate orders list cache (we don't cache it)
+        ]).catch((err) => {
+          // Log but don't throw - cache invalidation failure is non-fatal
+          console.error(
+            '⚠️  Cache invalidation failed after order update:',
+            err
+          )
+        })
 
         return updatedOrder
       } catch (error) {

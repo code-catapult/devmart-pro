@@ -3,7 +3,7 @@
 import { DollarSign, ShoppingCart, Package, Users } from 'lucide-react'
 import { api } from '~/utils/api'
 import { Card, CardContent, CardHeader, CardTitle, Skeleton } from '@repo/ui'
-import { formatPrice } from '@repo/shared/utils'
+import { formatPrice, formatNumber } from '@repo/shared/utils'
 
 /**
  * MetricsCards Component
@@ -33,11 +33,6 @@ export function MetricsCards() {
 
   if (isLoading) {
     return <MetricsCardsSkeleton />
-  }
-
-  // Format number with commas
-  const formatNumber = (num: number) => {
-    return new Intl.NumberFormat('en-US').format(num)
   }
 
   return (
