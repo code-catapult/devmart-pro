@@ -20,6 +20,7 @@
     "test:sessions": "tsx scripts/test-jwt-sessions.ts",
     "test:stripe": "tsx --env-file=.env.local scripts/test-stripe.ts",
     "test:file-upload": "tsx --env-file=.env.local scripts/test-file-upload.ts",
+    "test:categories": "tsx scripts/test-category-service.ts",
     "db:seed": "tsx prisma/seed.ts",
     "db:reset": "prisma migrate reset --force && npm run db:seed",
     "db:studio": "prisma studio"
