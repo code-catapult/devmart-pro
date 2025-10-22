@@ -29,6 +29,16 @@
   --color-card: hsl(0 0% 100%);
   --color-card-foreground: hsl(222.2 84% 4.9%);
 
+  /* Product Status */
+
+  --color-active: hsl(199 89% 56%);
+  --color-active-hover: hsl(199 89% 46%);
+  --color-inactive: hsl(214, 32%, 85%);
+  --color-inactive-hover: hsl(214 32% 75%);
+  --color-inactive-text: hsl(217 33% 17%);
+  --color-discontinued: hsl(21 90% 56%);
+  --color-discontinued-hover: hsl(21 90% 46%);
+
   --radius: 0.5rem;
 }
 

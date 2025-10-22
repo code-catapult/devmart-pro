@@ -22,3 +22,4 @@ export * from "./components/DropdownMenu";
 export * from "./components/Avatar";
 export * from "./components/Skeleton";
 export * from "./components/Tabs";
+export * from "./components/Table";
