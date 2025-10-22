@@ -6,12 +6,12 @@ import { TRPCError } from '@trpc/server'
 import { OrderStatus } from '@repo/shared/types'
 
 /**
- * Admin Router
+ * Dashboard Router
  *
+ * Admin dashboard metrics, orders, analytics, and inventory monitoring.
  * All endpoints require admin role verification via adminProcedure middleware.
- * Provides dashboard metrics, order management, analytics, and inventory monitoring.
  */
-export const adminRouter = createTRPCRouter({
+export const dashboardRouter = createTRPCRouter({
   /**
    * Get dashboard overview metrics
    *

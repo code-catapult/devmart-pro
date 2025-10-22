@@ -19,7 +19,7 @@ export function MetricsCards() {
     data: metrics,
     isLoading,
     error,
-  } = api.admin.getDashboardMetrics.useQuery()
+  } = api.admin.dashboard.getDashboardMetrics.useQuery()
 
   if (error) {
     return (

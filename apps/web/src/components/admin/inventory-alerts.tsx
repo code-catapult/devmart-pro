@@ -6,7 +6,7 @@ import { AlertTriangle } from 'lucide-react'
 
 export function InventoryAlerts() {
   const { data: products, isLoading } =
-    api.admin.getLowInventoryProducts.useQuery({ threshold: 10 })
+    api.admin.dashboard.getLowInventoryProducts.useQuery({ threshold: 10 })
 
   const getSeverity = (inventory: number) => {
     if (inventory === 0)

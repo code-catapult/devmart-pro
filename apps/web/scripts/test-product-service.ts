@@ -59,7 +59,9 @@ async function testProductAdminService() {
       console.log('   ❌ Should have rejected negative inventory')
     } catch (error) {
       console.log('   ✅ Correctly rejected negative inventory')
-      console.log(`   Error: ${error.message}`)
+      if (error instanceof Error) {
+        console.log(`   Error: ${error.message}`)
+      }
     }
 
     console.log('\n✅ All tests passed!')

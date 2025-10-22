@@ -26,9 +26,10 @@ type SalesAnalyticsPeriod = 'daily' | 'weekly' | 'monthly'
 
 export function SalesChart() {
   const [period, setPeriod] = useState<SalesAnalyticsPeriod>('daily')
-  const { data: analytics, isLoading } = api.admin.getSalesAnalytics.useQuery({
-    period,
-  })
+  const { data: analytics, isLoading } =
+    api.admin.dashboard.getSalesAnalytics.useQuery({
+      period,
+    })
 
   return (
     <Card>

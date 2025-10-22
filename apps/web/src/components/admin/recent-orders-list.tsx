@@ -21,19 +21,20 @@ import { OrderStatus } from '@repo/shared/types'
 
 export function RecentOrdersList() {
   const [page, setPage] = useState(1)
-  const { data, isLoading } = api.admin.getRecentOrders.useQuery({
+  const { data, isLoading } = api.admin.dashboard.getRecentOrders.useQuery({
     limit: 10,
     page,
   })
   const utils = api.useUtils()
 
-  const updateStatusMutation = api.admin.updateOrderStatus.useMutation({
-    onSuccess: () => {
-      // Invalidate and refetch orders
-      utils.admin.getRecentOrders.invalidate()
-      utils.admin.getDashboardMetrics.invalidate()
-    },
-  })
+  const updateStatusMutation =
+    api.admin.dashboard.updateOrderStatus.useMutation({
+      onSuccess: () => {
+        // Invalidate and refetch orders
+        utils.admin.dashboard.getRecentOrders.invalidate()
+        utils.admin.dashboard.getDashboardMetrics.invalidate()
+      },
+    })
 
   const getStatusColor = (status: string) => {
     const colors = {

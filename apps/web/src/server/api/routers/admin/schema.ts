@@ -138,7 +138,7 @@ export const categoryCreateSchema = z.object({
     .string()
     .regex(/^[a-z0-9-]+$/, 'Slug must be lowercase with hyphens only')
     .optional(),
-  parentId: z.cuid('Invalid parent category ID').optional().nullable(),
+  parentId: z.cuid('Invalid parent category ID').optional(),
 })
 
 export const categoryUpdateSchema = categoryCreateSchema
