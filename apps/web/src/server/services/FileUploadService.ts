@@ -64,7 +64,16 @@ export class FileUploadService {
 
     this.bucket = requiredEnvVars.AWS_S3_BUCKET!
     this.region = process.env.AWS_S3_REGION || 'us-east-1'
-    this.cdnUrl = process.env.AWS_S3_CDN_URL
+
+    // Normalize CDN URL to always include https:// protocol
+    if (process.env.AWS_S3_CDN_URL) {
+      const cdnUrl = process.env.AWS_S3_CDN_URL.trim()
+      this.cdnUrl =
+        cdnUrl.startsWith('http://') || cdnUrl.startsWith('https://')
+          ? cdnUrl
+          : `https://${cdnUrl}`
+    }
+
     this.MAX_FILE_SIZE =
       parseInt(process.env.MAX_IMAGE_SIZE_MB || '5') * 1024 * 1024
 

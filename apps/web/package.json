@@ -69,6 +69,7 @@
     "prisma": "^6.16.2",
     "react": "19.1.0",
     "react-dom": "19.1.0",
+    "react-dropzone": "^14.3.8",
     "react-hook-form": "^7.64.0",
     "react-redux": "^9.2.0",
     "recharts": "^3.2.1",
