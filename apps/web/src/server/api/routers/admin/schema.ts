@@ -39,9 +39,13 @@ export const productCreateSchema = z.object({
     .max(5, 'Maximum 5 images allowed per product'),
   status: z.enum(ProductStatus).optional().default('ACTIVE'),
   slug: z
-    .string()
-    .regex(/^[a-z0-9-]+$/, 'Slug must be lowercase with hyphens only')
-    .optional()
+    .preprocess(
+      (val) => (val === '' ? undefined : val),
+      z
+        .string()
+        .regex(/^[a-z0-9-]+$/, 'Slug must be lowercase with hyphens only')
+        .optional()
+    )
     .describe('Auto-generated if not provided'),
 })
 
@@ -134,10 +138,13 @@ export const categoryCreateSchema = z.object({
     .min(1, 'Category name is required')
     .max(100, 'Category name must be 100 characters or less')
     .trim(),
-  slug: z
-    .string()
-    .regex(/^[a-z0-9-]+$/, 'Slug must be lowercase with hyphens only')
-    .optional(),
+  slug: z.preprocess(
+    (val) => (val === '' ? undefined : val),
+    z
+      .string()
+      .regex(/^[a-z0-9-]+$/, 'Slug must be lowercase with hyphens only')
+      .optional()
+  ),
   parentId: z.cuid('Invalid parent category ID').optional(),
 })
 

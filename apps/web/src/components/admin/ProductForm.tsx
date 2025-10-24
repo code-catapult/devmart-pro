@@ -21,9 +21,9 @@ import {
   SelectValue,
   Textarea,
 } from '@repo/ui'
-
 import { ImageUpload } from './ImageUpload'
 import { Loader2 } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 
 /**
  * Product Form Schema
@@ -98,9 +98,18 @@ export function ProductForm({
     },
   })
 
+  const router = useRouter()
+
+  const handleCancel = () => {
+    router.back()
+  }
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="space-y-8 text-gray-500"
+      >
         {/* Product Name */}
         <FormField
           control={form.control}
@@ -298,7 +307,12 @@ export function ProductForm({
 
         {/* Submit Button */}
         <div className="flex justify-end gap-4">
-          <Button type="button" variant="outline" disabled={isSubmitting}>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={isSubmitting}
+            onClick={handleCancel}
+          >
             Cancel
           </Button>
           <Button type="submit" disabled={isSubmitting}>

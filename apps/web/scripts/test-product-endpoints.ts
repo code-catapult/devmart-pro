@@ -41,6 +41,7 @@ async function testProductEndpoints() {
     console.log('\n2. Create category:')
     const newCategory = await caller.admin.categories.create({
       name: 'Test Electronics',
+      slug: 'test-electronics',
     })
     console.log(`   Created: ${newCategory.name} (${newCategory.slug})`)
     console.log(`   Category ID: ${newCategory.id}`)
@@ -49,6 +50,7 @@ async function testProductEndpoints() {
     console.log('\n3. Create product:')
     const newProduct = await caller.admin.products.create({
       name: 'Test Laptop',
+      slug: 'test-laptop',
       description: 'High-performance laptop for testing',
       price: 129900, // $1,299.00 in cents
       inventory: 50,

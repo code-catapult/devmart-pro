@@ -25,6 +25,7 @@ const _testProductListInput: RouterInputs['admin']['products']['list'] = {
 // Test product create input (all required fields)
 const _testProductCreateInput: RouterInputs['admin']['products']['create'] = {
   name: 'Test Product',
+  slug: 'test-product',
   description: 'Test description with at least 10 characters',
   price: 9999, // cents
   inventory: 100,
@@ -43,6 +44,7 @@ const _testProductUpdateInput: RouterInputs['admin']['products']['update'] = {
 const _testCategoryCreateInput: RouterInputs['admin']['categories']['create'] =
   {
     name: 'Electronics',
+    slug: 'electronics',
     parentId: 'parent-cuid',
   }
 
