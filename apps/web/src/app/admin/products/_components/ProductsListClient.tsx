@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from '@repo/ui'
 import { ProductsTable } from './ProductsTable'
+import { BulkActionsBar } from '~/components/admin/bulk-actions'
 import { useDebounce } from '~/hooks/use-debounce'
 import { PlusCircle } from 'lucide-react'
 import Link from 'next/link'
@@ -47,6 +48,9 @@ export function ProductsListClient({
   const [sortBy, setSortBy] = useState(initialFilters.sortBy)
   const [sortOrder, setSortOrder] = useState(initialFilters.sortOrder)
   const [page, setPage] = useState(initialFilters.page)
+
+  // Selection state for bulk actions
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
 
   // Debounce search input (avoid API calls on every keystroke)
   const debouncedSearch = useDebounce(search, 300)
@@ -112,8 +116,48 @@ export function ProductsListClient({
     updateURL({ page: newPage })
   }
 
+  // NEW: Toggle individual product selection
+  const toggleSelection = (productId: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(productId)
+        ? prev.filter((id) => id !== productId)
+        : [...prev, productId]
+    )
+  }
+
+  // NEW: Toggle all products on current page
+  const toggleSelectAll = () => {
+    if (!data?.products) return
+
+    const allCurrentIds = data.products.map((p) => p.id)
+    const allSelected = allCurrentIds.every((id) => selectedIds.includes(id))
+
+    if (allSelected) {
+      // Deselect all on current page
+      setSelectedIds((prev) => prev.filter((id) => !allCurrentIds.includes(id)))
+    } else {
+      // Select all on current page (preserve selections from other pages)
+      setSelectedIds((prev) => [...new Set([...prev, ...allCurrentIds])])
+    }
+  }
+
+  // NEW: Clear all selections
+  const clearSelection = () => setSelectedIds([])
+
   return (
     <div className="flex flex-col gap-4">
+      {/* NEW: Bulk Actions Bar (only visible when items selected) */}
+      {selectedIds.length > 0 && (
+        <BulkActionsBar
+          selectedIds={selectedIds}
+          onClearSelection={clearSelection}
+          onSuccess={() => {
+            clearSelection()
+            // Optionally refetch data - tRPC cache invalidation handles this
+          }}
+        />
+      )}
+
       {/* Filters and Actions */}
       <div className="flex items-center gap-4 p-2">
         {/* Search */}
@@ -172,6 +216,10 @@ export function ProductsListClient({
           sortOrder={sortOrder}
           onSortChange={handleSortChange}
           onPageChange={handlePageChange}
+          // NEW: Pass selection props to ProductsTable
+          selectedIds={selectedIds}
+          onToggleSelection={toggleSelection}
+          onToggleSelectAll={toggleSelectAll}
         />
       )}
     </div>

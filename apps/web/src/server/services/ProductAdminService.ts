@@ -487,8 +487,8 @@ export class ProductAdminService {
           // FIXED_AMOUNT
           newPrice =
             operation === 'INCREASE'
-              ? product.price + value
-              : product.price - value
+              ? product.price + value * 100
+              : product.price - value * 100
         }
 
         // Ensure price doesn't go negative, round to integer (cents)

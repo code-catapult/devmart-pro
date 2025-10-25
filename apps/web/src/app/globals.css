@@ -31,8 +31,8 @@
 
   /* Product Status */
 
-  --color-active: hsl(199 89% 56%);
-  --color-active-hover: hsl(199 89% 46%);
+  --color-active: hsl(199, 40%, 43%);
+  --color-active-hover: hsl(199, 40%, 33%);
   --color-inactive: hsl(214, 32%, 85%);
   --color-inactive-hover: hsl(214 32% 75%);
   --color-inactive-text: hsl(217 33% 17%);
