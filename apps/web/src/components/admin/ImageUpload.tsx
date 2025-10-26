@@ -43,6 +43,9 @@ export function ImageUpload({
         return
       }
 
+      // Accumulate uploaded URLs locally to avoid race conditions
+      const uploadedUrls: string[] = []
+
       // Process each file
       for (const file of acceptedFiles) {
         const fileId = `${file.name}-${Date.now()}`
@@ -112,8 +115,8 @@ export function ImageUpload({
             xhr.send(file)
           })
 
-          // Step 3: Add URL to form
-          onChange([...value, fileUrl])
+          // Step 3: Add URL to local array
+          uploadedUrls.push(fileUrl)
 
           // Clear upload state
           setUploading((prev) => {
@@ -137,6 +140,11 @@ export function ImageUpload({
             return newState
           })
         }
+      }
+
+      // Update form with all uploaded URLs at once
+      if (uploadedUrls.length > 0) {
+        onChange([...value, ...uploadedUrls])
       }
     },
     [value, onChange, maxImages]
