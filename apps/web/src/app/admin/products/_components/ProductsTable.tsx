@@ -25,6 +25,7 @@ import { cn } from '@repo/shared/utils'
 import { Route } from 'next'
 import Image from 'next/image'
 import type { RouterOutputs } from '~/utils/api'
+import { Pagination } from '~/components/ui/pagination'
 
 // Extract Product type from tRPC router output - always in sync with API
 type Product = RouterOutputs['admin']['products']['list']['products'][number]
@@ -52,8 +53,12 @@ interface ProductsTableProps {
 /**
  * ProductsTable Component
  *
- * Displays products in a sortable, paginated table with bulk selection.
+ * Displays products in a sortable, paginated table with bulk selection (desktop) or card layout (mobile).
  * Handles product listing, sorting, pagination, and row selection for admin interface.
+ *
+ * Responsive Design:
+ * - Desktop (≥768px): Traditional table with sortable columns and checkboxes
+ * - Mobile (<768px): Card-based layout with key information stacked
  */
 export function ProductsTable({
   products,
@@ -107,8 +112,9 @@ export function ProductsTable({
     allCurrentIds.some((id) => selectedIds.includes(id)) && !allCurrentSelected
 
   return (
-    <div className="space-y-4">
-      <div className="rounded-md border">
+    <div className="space-y-4 rounded-md p-2">
+      {/* Desktop Table View (hidden on mobile) */}
+      <div className="hidden md:block rounded-md border">
         <Table>
           <TableHeader>
             <TableRow>
@@ -294,93 +300,118 @@ export function ProductsTable({
         </Table>
       </div>
 
-      {/* Pagination Controls */}
-      <div className="flex items-center justify-between">
-        <div className="text-sm text-muted-foreground">
-          Showing {(pagination.page - 1) * pagination.limit + 1} to{' '}
-          {Math.min(pagination.page * pagination.limit, pagination.totalCount)}{' '}
-          of {pagination.totalCount} products
-        </div>
-
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onPageChange(pagination.page - 1)}
-            disabled={!pagination.hasPreviousPage}
-          >
-            Previous
-          </Button>
-
-          <div className="flex items-center gap-1">
-            {/* Show first page */}
-            {pagination.page > 2 && (
-              <>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onPageChange(1)}
-                >
-                  1
-                </Button>
-                {pagination.page > 3 && <span className="px-2">...</span>}
-              </>
-            )}
-
-            {/* Show previous page */}
-            {pagination.hasPreviousPage && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onPageChange(pagination.page - 1)}
-              >
-                {pagination.page - 1}
-              </Button>
-            )}
-
-            {/* Show current page */}
-            <Button variant="default" size="sm" disabled>
-              {pagination.page}
-            </Button>
-
-            {/* Show next page */}
-            {pagination.hasNextPage && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onPageChange(pagination.page + 1)}
-              >
-                {pagination.page + 1}
-              </Button>
-            )}
-
-            {/* Show last page */}
-            {pagination.page < pagination.totalPages - 1 && (
-              <>
-                {pagination.page < pagination.totalPages - 2 && (
-                  <span className="px-2">...</span>
-                )}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onPageChange(pagination.totalPages)}
-                >
-                  {pagination.totalPages}
-                </Button>
-              </>
-            )}
-          </div>
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onPageChange(pagination.page + 1)}
-            disabled={!pagination.hasNextPage}
-          >
-            Next
-          </Button>
-        </div>
+      {/* Mobile Card View (hidden on desktop) */}
+      <div className="md:hidden flex items-center gap-2 mb-2">
+        <Checkbox
+          checked={someCurrentSelected ? 'indeterminate' : allCurrentSelected}
+          onCheckedChange={onToggleSelectAll}
+          aria-label="Select all products on this page"
+        />
+        <span className="inline-block text-gray-500">Select All</span>
       </div>
+      <div className="md:hidden space-y-4">
+        {products.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            No products found
+          </div>
+        ) : (
+          products.map((product) => (
+            <div
+              key={product.id}
+              className={cn(
+                'border rounded-lg p-4 space-y-3 bg-card hover:bg-accent/50 transition-colors',
+                selectedIds.includes(product.id) && 'bg-muted/50 border-primary'
+              )}
+            >
+              {/* Checkbox & Product Name & Status */}
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  checked={selectedIds.includes(product.id)}
+                  onCheckedChange={() => onToggleSelection(product.id)}
+                  aria-label={`Select ${product.name}`}
+                  className="mt-1 bg-gray-100"
+                />
+                <div className="flex-1 flex items-start justify-between gap-2">
+                  <h3 className="font-semibold text-base">{product.name}</h3>
+                  <Badge
+                    className={cn(
+                      'shrink-0',
+                      product.status === 'ACTIVE'
+                        ? 'bg-active hover:bg-active-hover text-gray-50'
+                        : product.status === 'INACTIVE'
+                          ? 'bg-inactive hover:bg-inactive-hover text-gray-50'
+                          : 'bg-discontinued hover:bg-discontinued-hover text-gray-50'
+                    )}
+                    variant={getStatusBadgeVariant(product.status)}
+                  >
+                    {product.status}
+                  </Badge>
+                </div>
+              </div>
+
+              {/* Category & Price */}
+              <div className="text-sm mb-8">
+                <div className="flex items-center gap-2">
+                  {product.category ? (
+                    <Badge variant="outline">{product.category.name}</Badge>
+                  ) : (
+                    <span className="text-muted-foreground">Uncategorized</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Inventory */}
+              <div className="flex items-center justify-between text-sm text-muted-foreground">
+                <span>
+                  Stock:{' '}
+                  <span
+                    className={cn(
+                      'font-medium',
+                      product.inventory <= 10
+                        ? 'text-destructive font-semibold'
+                        : product.inventory > 10 && product.inventory <= 50
+                          ? 'text-yellow-600 font-semibold'
+                          : 'text-foreground'
+                    )}
+                  >
+                    {product.inventory}
+                  </span>
+                </span>
+                <span className="font-semibold text-base">
+                  {formatPrice(product.price)}
+                </span>
+              </div>
+
+              {/* Action Buttons - Touch-friendly size */}
+              <div className="flex gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 h-10"
+                  asChild
+                >
+                  <Link href={`/admin/products/${product.id}/edit` as Route}>
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit
+                  </Link>
+                </Button>
+                <Button variant="outline" size="sm" className="h-10 px-3">
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Pagination Controls - Using shared Pagination component */}
+      <Pagination
+        currentPage={pagination.page}
+        totalPages={pagination.totalPages}
+        totalItems={pagination.totalCount}
+        itemsPerPage={pagination.limit}
+        onPageChange={onPageChange}
+      />
     </div>
   )
 }

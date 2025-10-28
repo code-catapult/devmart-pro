@@ -159,7 +159,7 @@ export function ProductsListClient({
       )}
 
       {/* Filters and Actions */}
-      <div className="flex items-center gap-4 p-2">
+      <div className="flex flex-col sm:flex-row items-start gap-2 sm:gap-4 w-full sm:w-auto">
         {/* Search */}
         <Input
           placeholder="Search products..."
@@ -170,7 +170,7 @@ export function ProductsListClient({
 
         {/* Status Filter */}
         <Select value={status} onValueChange={handleStatusChange}>
-          <SelectTrigger className="w-[180px] text-gray-500">
+          <SelectTrigger className="md:w-[180px] text-gray-500">
             <SelectValue placeholder="Filter by status" />
           </SelectTrigger>
           <SelectContent>
@@ -185,7 +185,7 @@ export function ProductsListClient({
         <div className="flex-1" />
 
         {/* Create Product Button */}
-        <Button asChild>
+        <Button asChild className="w-[180px] sm:w-fit">
           <Link href={'/admin/products/new' as Route}>
             <PlusCircle className="mr-2 h-4 w-4" />
             Add Product

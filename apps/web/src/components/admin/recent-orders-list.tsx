@@ -19,6 +19,18 @@ import { formatPrice } from '@repo/shared/utils'
 import { formatDistance } from 'date-fns'
 import { OrderStatus } from '@repo/shared/types'
 
+/**
+ * RecentOrdersList Component (Mobile-Responsive)
+ *
+ * Displays recent orders with status management.
+ *
+ * Mobile Features:
+ * - Stacked layout for better readability
+ * - Larger touch targets for status dropdown
+ * - Full-width status selector on mobile
+ * - Responsive pagination controls
+ */
+
 export function RecentOrdersList() {
   const [page, setPage] = useState(1)
   const { data, isLoading } = api.admin.dashboard.getRecentOrders.useQuery({
@@ -64,14 +76,14 @@ export function RecentOrdersList() {
             {data?.orders.map((order) => (
               <div
                 key={order.id}
-                className="flex items-center justify-between border-b pb-4"
+                className="flex flex-col sm:justify-between border-b pb-4"
               >
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
+                <div className="flex-1 mb-6">
+                  <Badge className={getStatusColor(order.status)}>
+                    {order.status}
+                  </Badge>
+                  <div className="flex items-center gap-2 mt-1 mb-1">
                     <span className="font-medium">{order.orderNumber}</span>
-                    <Badge className={getStatusColor(order.status)}>
-                      {order.status}
-                    </Badge>
                   </div>
                   <p className="text-sm text-muted-foreground">
                     {order.user.name || order.user.email}
@@ -82,7 +94,7 @@ export function RecentOrdersList() {
                     })}
                   </p>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex justify-between items-center gap-4">
                   <span className="font-semibold">
                     {formatPrice(order.total)}
                   </span>

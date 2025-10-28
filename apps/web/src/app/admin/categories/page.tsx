@@ -24,10 +24,10 @@ export default async function CategoriesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl text-gray-500 font-bold tracking-tight">
+          <h1 className="text-2xl text-gray-700 md:text-3xl font-bold tracking-tight">
             Category Management
           </h1>
-          <p className="text-gray-500">
+          <p className="text-sm md:text-base text-gray-500">
             Organize products into hierarchical categories
           </p>
         </div>

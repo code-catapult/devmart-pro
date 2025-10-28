@@ -227,23 +227,23 @@ export function CategoryFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <DialogHeader>
-            <DialogTitle>
+      <DialogContent className="w-full sm:max-w-[500px] bg-card">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <DialogHeader className="space-y-3">
+            <DialogTitle className="text-xl md:text-2xl">
               {isEditMode ? 'Edit Category' : 'Create Category'}
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-sm md:text-base">
               {isEditMode
                 ? 'Update category details below'
                 : 'Create a new category to organize your products'}
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
+          <div className="space-y-4">
             {/* Name Field */}
             <div className="space-y-2">
-              <Label htmlFor="name">
+              <Label htmlFor="name" className="text-sm font-medium">
                 Name <span className="text-red-500">*</span>
               </Label>
               <Input
@@ -251,17 +251,20 @@ export function CategoryFormDialog({
                 {...register('name')}
                 placeholder="e.g., Electronics, Clothing"
                 autoComplete="off"
+                className="h-11 md:h-10 transition-colors bg-background hover:bg-accent/50 focus:bg-background"
               />
               {errors.name && (
-                <p className="text-sm text-red-500">{errors.name.message}</p>
+                <p className="text-sm text-red-500 font-medium">
+                  {errors.name.message}
+                </p>
               )}
             </div>
 
             {/* Slug Field (read-only in create, editable in edit) */}
             <div className="space-y-2">
-              <Label htmlFor="slug">
+              <Label htmlFor="slug" className="text-sm font-medium">
                 Slug
-                <span className="ml-2 text-sm text-gray-500">
+                <span className="ml-2 text-xs text-muted-foreground font-normal">
                   (auto-generated)
                 </span>
               </Label>
@@ -270,27 +273,39 @@ export function CategoryFormDialog({
                 {...register('slug')}
                 placeholder="electronics"
                 readOnly={!isEditMode}
-                className={!isEditMode ? 'bg-gray-50' : ''}
+                className={`h-11 md:h-10 transition-colors ${
+                  !isEditMode
+                    ? 'bg-muted cursor-not-allowed'
+                    : 'bg-background hover:bg-accent/50 focus:bg-background'
+                }`}
               />
               {errors.slug && (
-                <p className="text-sm text-red-500">{errors.slug.message}</p>
+                <p className="text-sm text-red-500 font-medium">
+                  {errors.slug.message}
+                </p>
               )}
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-muted-foreground">
                 URL-friendly version of the name. Used in product URLs.
               </p>
             </div>
 
             {/* Description Field */}
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description" className="text-sm font-medium">
+                Description
+                <span className="ml-2 text-xs text-muted-foreground font-normal">
+                  (optional)
+                </span>
+              </Label>
               <Textarea
                 id="description"
                 {...register('description')}
                 placeholder="Optional description of this category"
                 rows={3}
+                className="min-h-[88px] transition-colors bg-background hover:bg-accent/50 focus:bg-background resize-none"
               />
               {errors.description && (
-                <p className="text-sm text-red-500">
+                <p className="text-sm text-red-500 font-medium">
                   {errors.description.message}
                 </p>
               )}
@@ -298,9 +313,11 @@ export function CategoryFormDialog({
 
             {/* Parent Category Selection */}
             <div className="space-y-2">
-              <Label htmlFor="parentId">
+              <Label htmlFor="parentId" className="text-sm font-medium">
                 Parent Category
-                <span className="ml-2 text-sm text-gray-500">(optional)</span>
+                <span className="ml-2 text-xs text-muted-foreground font-normal">
+                  (optional)
+                </span>
               </Label>
               <Select
                 value={watch('parentId') || 'none'}
@@ -308,15 +325,19 @@ export function CategoryFormDialog({
                   setValue('parentId', value === 'none' ? null : value)
                 }
               >
-                <SelectTrigger>
+                <SelectTrigger className="h-11 md:h-10 transition-colors bg-background hover:bg-accent/50">
                   <SelectValue placeholder="Select parent category" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">
+                <SelectContent className="bg-card">
+                  <SelectItem value="none" className="hover:bg-accent/50">
                     <span className="font-medium">None (Root Category)</span>
                   </SelectItem>
                   {availableCategories.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.id}>
+                    <SelectItem
+                      key={cat.id}
+                      value={cat.id}
+                      className="hover:bg-accent/50"
+                    >
                       <span style={{ paddingLeft: `${cat.depth * 16}px` }}>
                         {cat.depth > 0 && '└─ '}
                         {cat.name}
@@ -326,7 +347,7 @@ export function CategoryFormDialog({
                 </SelectContent>
               </Select>
               {isEditMode && excludedIds.length > 0 && (
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-muted-foreground">
                   Note: This category and its children are not available as
                   parent options (prevents circular references)
                 </p>
@@ -334,16 +355,21 @@ export function CategoryFormDialog({
             </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="flex-col-reverse sm:flex-row gap-2 sm:gap-0 pt-2">
             <Button
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
               disabled={isPending}
+              className="w-full sm:w-auto h-11 md:h-10 transition-colors hover:bg-accent/50"
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isPending}>
+            <Button
+              type="submit"
+              disabled={isPending}
+              className="w-full sm:w-auto h-11 md:h-10 transition-colors"
+            >
               {isPending
                 ? isEditMode
                   ? 'Updating...'

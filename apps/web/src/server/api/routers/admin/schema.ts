@@ -86,6 +86,7 @@ export const productListSchema = z.object({
     .max(100, 'Limit cannot exceed 100 items')
     .optional()
     .default(20),
+  lowStockOnly: z.boolean().optional(), // Filter for low stock products (inventory < 10)
 })
 
 // Single Product Fetch
@@ -127,6 +128,17 @@ export const bulkUpdatePricesSchema = z
       path: ['value'],
     }
   )
+
+export const adjustInventorySchema = z.object({
+  productId: z.cuid('Invalid product ID'),
+  type: z.enum(['SET', 'ADJUST']),
+  value: z.number().int(),
+  reason: z.string().min(1, 'Reason is required').max(200),
+})
+
+export const productMetricsSchema = z.object({
+  id: z.cuid('Invalid product ID'),
+})
 
 /**
  * Enhanced Category Input Schemas

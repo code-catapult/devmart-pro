@@ -61,6 +61,7 @@ export class ProductAdminService {
     sortOrder?: 'asc' | 'desc'
     page?: number
     limit?: number
+    lowStockOnly?: boolean
   }) {
     const {
       search,
@@ -70,6 +71,7 @@ export class ProductAdminService {
       sortOrder = 'desc',
       page = 1,
       limit = 20,
+      lowStockOnly = false,
     } = options
 
     // Build where clause
@@ -85,6 +87,10 @@ export class ProductAdminService {
       ...(categoryId && { categoryId }),
       // Filter by status (exclude 'ALL')
       ...(status !== 'ALL' && { status }),
+      ...(lowStockOnly && {
+        inventory: { lt: 10 }, // Low stock threshold: < 10 units
+        status: 'ACTIVE', // Only shows active products
+      }),
     }
 
     // ✨ ENHANCED: Parallel queries for performance
@@ -520,6 +526,173 @@ export class ProductAdminService {
     })
 
     return result
+  }
+
+  /**
+   * Adjust product inventory (Story 3.2 - Task 13)
+   *
+   * Supports two modes:
+   * - SET: Replace inventory with exact value
+   * - ADJUST: Add/subtract from current inventory
+   *
+   * @param productId - Product ID
+   * @param type - SET or ADJUST
+   * @param value - New inventory (SET) or adjustment amount (ADJUST)
+   * @param reason - Reason for adjustment (audit trail)
+   * @returns Updated product
+   */
+  async adjustInventory(
+    productId: string,
+    type: 'SET' | 'ADJUST',
+    value: number,
+    reason: string
+  ) {
+    const product = await prisma.product.findUnique({
+      where: { id: productId },
+    })
+
+    if (!product) {
+      throw new Error('Product not found')
+    }
+
+    let newInventory: number
+
+    if (type === 'SET') {
+      // Set exact value
+      newInventory = value
+    } else {
+      // Adjust by adding value (can be negative)
+      newInventory = product.inventory + value
+    }
+
+    // Ensure inventory doesn't go negative
+    if (newInventory < 0) {
+      throw new Error('Inventory cannot be negative')
+    }
+
+    // Log adjustment for audit trail
+    console.log(
+      `Inventory adjustment: Product ${productId}, ${type} ${value}, Reason: ${reason}`
+    )
+
+    // Update inventory
+    const updated = await prisma.product.update({
+      where: { id: productId },
+      data: { inventory: newInventory },
+      include: {
+        category: true,
+      },
+    })
+
+    // TODO: Create proper inventory audit log table in database
+    // Store: productId, oldInventory, newInventory, type, value, reason, userId, timestamp
+    // This would provide complete audit trail for compliance
+
+    return updated
+  }
+
+  /**
+   * Calculate product performance metrics (Story 3.2 - Task 12)
+   *
+   * Aggregates order data to provide business intelligence.
+   * Only includes DELIVERED orders (completed purchases).
+   *
+   * @param productId - Product to calculate metrics for
+   * @returns Metrics object with revenue, sales, and performance indicators
+   */
+  async calculateProductMetrics(productId: string) {
+    // Aggregate order data for completed orders only
+    const orderStats = await prisma.orderItem.aggregate({
+      where: {
+        productId,
+        order: {
+          status: 'DELIVERED', // Only count completed orders
+        },
+      },
+      _count: {
+        id: true, // Total order items
+      },
+      _sum: {
+        quantity: true, // Total units sold
+        price: true, // Total revenue (sum of item totals)
+      },
+    })
+
+    // Count distinct orders
+    const distinctOrders = await prisma.orderItem.findMany({
+      where: {
+        productId,
+        order: {
+          status: 'DELIVERED',
+        },
+      },
+      select: {
+        orderId: true,
+      },
+      distinct: ['orderId'],
+    })
+
+    // Get current product inventory for turnover calculation
+    const product = await prisma.product.findUnique({
+      where: { id: productId },
+      select: { inventory: true },
+    })
+
+    const unitsSold = orderStats._sum.quantity || 0
+    const totalRevenue = orderStats._sum.price || 0
+    const orderCount = distinctOrders.length
+    const currentInventory = product?.inventory || 0
+
+    return {
+      totalRevenue, // Total $ generated
+      unitsSold, // Total quantity sold
+      orderCount, // Number of orders
+      averageOrderValue: orderCount > 0 ? totalRevenue / orderCount : 0,
+      inventoryTurnover:
+        currentInventory > 0 ? unitsSold / currentInventory : 0,
+      // Conversion rate placeholder (requires view tracking)
+      conversionRate: null,
+    }
+  }
+
+  /**
+   * Update product status (Story 3.2 - Task 14)
+   *
+   * Enforces state machine rules:
+   * - ACTIVE ↔ INACTIVE (reversible)
+   * - ACTIVE/INACTIVE → DISCONTINUED (one-way)
+   * - DISCONTINUED → X (cannot change)
+   *
+   * @param productId - Product ID
+   * @param status - New status
+   * @returns Updated product
+   */
+  async updateProductStatus(productId: string, status: ProductStatus) {
+    const product = await prisma.product.findUnique({
+      where: { id: productId },
+    })
+
+    if (!product) {
+      throw new Error('Product not found')
+    }
+
+    // Validate state transitions
+    if (product.status === 'DISCONTINUED') {
+      throw new Error(
+        'Cannot change status of discontinued product (one-way transition)'
+      )
+    }
+
+    // Update status
+    const updated = await prisma.product.update({
+      where: { id: productId },
+      data: { status },
+      include: {
+        category: true,
+      },
+    })
+
+    return updated
   }
 }
 

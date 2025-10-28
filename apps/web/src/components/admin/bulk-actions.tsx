@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-
 import {
   Button,
   Input,
@@ -15,8 +14,9 @@ import {
   RadioGroup,
   RadioGroupItem,
 } from '@repo/ui'
+
 import { AlertTriangle, Trash2, DollarSign, X } from 'lucide-react'
-import { api } from '@/utils/api'
+import { api } from '~/utils/api'
 import { toast } from 'sonner'
 
 /**
@@ -117,55 +117,60 @@ export function BulkActionsBar({
   return (
     <>
       {/* Bulk Actions Bar */}
-      <div className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-200 bg-blue-50 px-4 py-3 shadow-sm">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-blue-900">
+      <div className="sticky top-0 z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 border-b border-gray-200 bg-blue-50 px-3 sm:px-4 py-2 sm:py-3 shadow-sm">
+        {/* Selection Count */}
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-sm sm:text-base font-medium text-blue-900 truncate">
             {selectedIds.length} selected
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
+        {/* Action Buttons - Responsive Layout */}
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto mb-2 pt-4 md:pt-6">
+          {/* Delete Button */}
           <Button
             variant="outline"
             size="sm"
             onClick={() => setDeleteDialogOpen(true)}
-            className="gap-2"
+            className="gap-1.5 h-9 sm:h-8 text-sm flex-1 sm:flex-none min-w-[100px]"
           >
             <Trash2 className="h-4 w-4" />
-            Delete
+            <span className="sm:inline">Delete</span>
           </Button>
 
+          {/* Update Prices Button */}
           <Button
             variant="outline"
             size="sm"
             onClick={() => setPriceDialogOpen(true)}
-            className="gap-2"
+            className="gap-1.5 h-9 sm:h-8 text-sm flex-1 sm:flex-none min-w-[100px]"
           >
             <DollarSign className="h-4 w-4" />
-            Update Prices
+            <span className="sm:inline">Update Prices</span>
           </Button>
 
+          {/* Clear Button */}
           <Button
             variant="ghost"
             size="sm"
             onClick={onClearSelection}
-            className="gap-2"
+            className="gap-1.5 h-9 sm:h-8 text-sm px-3 absolute right-0 top-0"
           >
-            <X className="h-4 w-4" />
-            Clear
+            <X className="h-4 w-4 text-gray-700" />
+            <span className="sr-only">Clear</span>
           </Button>
         </div>
       </div>
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-[95vw] sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-red-500" />
+              <AlertTriangle className="h-5 w-5 text-red-500 shrink-0" />
               Discontinue {selectedIds.length} Products?
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-sm">
               This will set the status of {selectedIds.length} product
               {selectedIds.length === 1 ? '' : 's'} to DISCONTINUED. Products
               will no longer be visible to customers, but historical order data
@@ -173,18 +178,19 @@ export function BulkActionsBar({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="rounded-md bg-yellow-50 p-4">
-            <p className="text-sm text-yellow-800">
+          <div className="rounded-md bg-yellow-50 p-3 sm:p-4">
+            <p className="text-sx sm:text-sm text-yellow-800">
               <strong>Note:</strong> This is a soft delete. Products can be
               reactivated later if needed.
             </p>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button
               variant="outline"
               onClick={() => setDeleteDialogOpen(false)}
               disabled={bulkDeleteMutation.isPending}
+              className="w-full sm:w-auto h-10"
             >
               Cancel
             </Button>
@@ -192,6 +198,7 @@ export function BulkActionsBar({
               variant="destructive"
               onClick={handleBulkDelete}
               disabled={bulkDeleteMutation.isPending}
+              className="w-full sm:w-auto h-10"
             >
               {bulkDeleteMutation.isPending
                 ? 'Discontinuing...'
@@ -203,20 +210,20 @@ export function BulkActionsBar({
 
       {/* Price Update Dialog */}
       <Dialog open={priceDialogOpen} onOpenChange={setPriceDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="max-w-[95vw] sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle className="text-base sm:text-lg">
               Update Prices for {selectedIds.length} Products
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-sm">
               Apply a price adjustment to all selected products.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
+          <div className="space-y-4 sm:space-y-6 py-4">
             {/* Update Type */}
             <div className="space-y-2">
-              <Label>Update Type</Label>
+              <Label className="text-sm sm:text-base">Update Type</Label>
               <RadioGroup
                 value={updateType}
                 onValueChange={(value) =>
@@ -225,13 +232,16 @@ export function BulkActionsBar({
               >
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="PERCENTAGE" id="percentage" />
-                  <Label htmlFor="percentage" className="font-normal">
+                  <Label
+                    htmlFor="percentage"
+                    className="text-sm cursor-pointer"
+                  >
                     Percentage (%)
                   </Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="FIXED_AMOUNT" id="fixed" />
-                  <Label htmlFor="fixed" className="font-normal">
+                  <Label htmlFor="fixed" className="text-sm cursor-pointer">
                     Fixed Amount ($)
                   </Label>
                 </div>
@@ -240,7 +250,7 @@ export function BulkActionsBar({
 
             {/* Value */}
             <div className="space-y-2">
-              <Label htmlFor="value">
+              <Label htmlFor="value" className="text-sm sm:text-base">
                 {updateType === 'PERCENTAGE' ? 'Percentage' : 'Amount'}
               </Label>
               <Input
@@ -251,12 +261,13 @@ export function BulkActionsBar({
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
                 placeholder={updateType === 'PERCENTAGE' ? '10' : '5.00'}
+                className="h-10 sm:h-9 text-base sm:text-sm"
               />
             </div>
 
             {/* Operation */}
             <div className="space-y-2">
-              <Label>Operation</Label>
+              <Label className="text-sm sm:text-base">Operation</Label>
               <RadioGroup
                 value={operation}
                 onValueChange={(value) =>
@@ -265,13 +276,13 @@ export function BulkActionsBar({
               >
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="INCREASE" id="increase" />
-                  <Label htmlFor="increase" className="font-normal">
+                  <Label htmlFor="increase" className="text-sm cursor-pointer">
                     Increase
                   </Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="DECREASE" id="decrease" />
-                  <Label htmlFor="decrease" className="font-normal">
+                  <Label htmlFor="decrease" className="text-sm cursor-pointer">
                     Decrease
                   </Label>
                 </div>
@@ -279,14 +290,18 @@ export function BulkActionsBar({
             </div>
 
             {/* Preview */}
-            <div className="rounded-md bg-blue-50 p-3">
-              <p className="text-sm text-blue-900">
+            <div className="rounded-md bg-blue-50 p-3 sm:p-4">
+              <p className="text-xs sm:text-sm text-blue-900">
                 <strong>Example:</strong> A product priced at $100.00 will
                 become{' '}
                 {updateType === 'PERCENTAGE'
                   ? operation === 'INCREASE'
-                    ? `$${(100 * (1 + parseFloat(value || '0') / 100)).toFixed(2)}`
-                    : `$${(100 * (1 - parseFloat(value || '0') / 100)).toFixed(2)}`
+                    ? `$${(100 * (1 + parseFloat(value || '0') / 100)).toFixed(
+                        2
+                      )}`
+                    : `$${(100 * (1 - parseFloat(value || '0') / 100)).toFixed(
+                        2
+                      )}`
                   : operation === 'INCREASE'
                     ? `$${(100 + parseFloat(value || '0')).toFixed(2)}`
                     : `$${(100 - parseFloat(value || '0')).toFixed(2)}`}
@@ -294,17 +309,19 @@ export function BulkActionsBar({
             </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button
               variant="outline"
               onClick={() => setPriceDialogOpen(false)}
               disabled={bulkPriceUpdateMutation.isPending}
+              className="w-full sm:w-auto h-10"
             >
               Cancel
             </Button>
             <Button
               onClick={handleBulkPriceUpdate}
               disabled={bulkPriceUpdateMutation.isPending}
+              className="w-full sm:w-auto h-10"
             >
               {bulkPriceUpdateMutation.isPending
                 ? 'Updating...'

@@ -9,6 +9,8 @@ import {
   productIdSchema,
   bulkDeleteSchema,
   bulkUpdatePricesSchema,
+  adjustInventorySchema,
+  productMetricsSchema,
 } from './schema'
 
 /**
@@ -270,5 +272,28 @@ export const productsRouter = createTRPCRouter({
           cause: error,
         })
       }
+    }),
+
+  /**
+   * Adjust product inventory (Story 3.2 - Task 13)
+   */
+  adjustInventory: adminProcedure
+    .input(adjustInventorySchema)
+    .mutation(async ({ input }) => {
+      return await productAdminService.adjustInventory(
+        input.productId,
+        input.type,
+        input.value,
+        input.reason
+      )
+    }),
+
+  /**
+   * Get product performance metrics (Story 3.2 - Task 12)
+   */
+  getMetrics: adminProcedure
+    .input(productMetricsSchema)
+    .query(async ({ input }) => {
+      return await productAdminService.calculateProductMetrics(input.id)
     }),
 })

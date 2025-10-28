@@ -17,51 +17,56 @@ export function InventoryAlerts() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <AlertTriangle className="h-5 w-5 text-yellow-600" />
-          Low Inventory Alerts
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <div className="space-y-2">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-12 bg-gray-100 animate-pulse rounded" />
-            ))}
-          </div>
-        ) : products && products.length > 0 ? (
-          <div className="space-y-3">
-            {products.map((product) => {
-              const severity = getSeverity(product.inventory)
-              return (
+    <div className="w-full">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-yellow-600" />
+            Low Inventory Alerts
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="space-y-2">
+              {[...Array(5)].map((_, i) => (
                 <div
-                  key={product.id}
-                  className="flex items-center justify-between border-b pb-3"
-                >
-                  <div className="flex-1">
-                    <p className="font-medium">{product.name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {product.category.name}
-                    </p>
+                  key={i}
+                  className="h-12 bg-gray-100 animate-pulse rounded"
+                />
+              ))}
+            </div>
+          ) : products && products.length > 0 ? (
+            <div className="space-y-3">
+              {products.map((product) => {
+                const severity = getSeverity(product.inventory)
+                return (
+                  <div
+                    key={product.id}
+                    className="flex flex-col sm:flex-row sm:items-center  sm:justify-between border-b pb-3"
+                  >
+                    <div className="flex-1">
+                      <p className="font-medium">{product.name}</p>
+                      <p className="text-sm text-muted-foreground mb-6">
+                        {product.category.name}
+                      </p>
+                    </div>
+                    <div className="flex justify-between sm:justify-end items-center gap-3">
+                      <span className="text-sm font-semibold">
+                        {product.inventory} left
+                      </span>
+                      <Badge className={severity.color}>{severity.label}</Badge>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm font-semibold">
-                      {product.inventory} left
-                    </span>
-                    <Badge className={severity.color}>{severity.label}</Badge>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        ) : (
-          <p className="text-sm text-muted-foreground text-center py-8">
-            All products have sufficient inventory
-          </p>
-        )}
-      </CardContent>
-    </Card>
+                )
+              })}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground text-center py-8">
+              All products have sufficient inventory
+            </p>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   )
 }

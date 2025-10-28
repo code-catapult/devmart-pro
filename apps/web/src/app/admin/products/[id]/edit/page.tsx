@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { ArrowLeft, Trash2 } from 'lucide-react'
 import Link from 'next/link'
+import { ProductMetrics } from '~/components/admin/product-metrics'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -102,9 +103,9 @@ export default function EditProductPage({
   return (
     <div className="flex flex-col gap-8 p-8">
       {/* Header with Back and Delete Buttons */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" asChild>
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4">
+        <div className="flex items-center gap-4 mb-4">
+          <Button variant="ghost" size="icon" asChild className="text-gray-700">
             <Link href="/admin/products">
               <ArrowLeft className="h-4 w-4" />
             </Link>
@@ -169,6 +170,12 @@ export default function EditProductPage({
         isSubmitting={updateProduct.isPending}
         categories={categories}
       />
+      {/* Product Performance Metrics Section - NEW */}
+      <div className="space-y-4">
+        <div className="border-t pt-8">
+          <ProductMetrics productId={productId} />
+        </div>
+      </div>
     </div>
   )
 }
