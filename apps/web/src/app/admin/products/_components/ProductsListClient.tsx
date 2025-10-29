@@ -4,6 +4,9 @@ import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { api } from '~/utils/api'
 import {
+  Alert, // NEW: Add Alert components
+  AlertDescription,
+  AlertTitle,
   Button,
   Input,
   Select,
@@ -15,7 +18,7 @@ import {
 import { ProductsTable } from './ProductsTable'
 import { BulkActionsBar } from '~/components/admin/bulk-actions'
 import { useDebounce } from '~/hooks/use-debounce'
-import { PlusCircle } from 'lucide-react'
+import { PlusCircle, AlertCircle } from 'lucide-react' // NEW: Add AlertCircle
 import Link from 'next/link'
 import { Route } from 'next'
 
@@ -34,7 +37,7 @@ interface ProductsListClientProps {
  * ProductsListClient
  *
  * Client component for interactive product listing.
- * Handles search, filters, sorting, and pagination.
+ * Handles search, filters, sorting, pagination, and low stock alerts.
  */
 export function ProductsListClient({
   initialFilters,
@@ -67,6 +70,11 @@ export function ProductsListClient({
     page,
     limit: 20,
   })
+
+  // NEW: Fetch low inventory products from dashboard endpoint
+  const { data: lowInventoryData } =
+    api.admin.dashboard.getLowInventoryProducts.useQuery({})
+  const lowStockCount = lowInventoryData?.length || 0
 
   // Update URL when filters change (for shareability and back button)
   const updateURL = (newFilters: Partial<typeof initialFilters>) => {
@@ -116,7 +124,22 @@ export function ProductsListClient({
     updateURL({ page: newPage })
   }
 
-  // NEW: Toggle individual product selection
+  // NEW: Handle view low stock products
+  const handleViewLowStock = () => {
+    // Filter by low inventory using sort
+    setSortBy('inventory')
+    setSortOrder('asc')
+    setStatus('ACTIVE')
+    setPage(1)
+    updateURL({
+      sortBy: 'inventory',
+      sortOrder: 'asc',
+      status: 'ACTIVE',
+      page: 1,
+    })
+  }
+
+  // Toggle individual product selection
   const toggleSelection = (productId: string) => {
     setSelectedIds((prev) =>
       prev.includes(productId)
@@ -125,7 +148,7 @@ export function ProductsListClient({
     )
   }
 
-  // NEW: Toggle all products on current page
+  // Toggle all products on current page
   const toggleSelectAll = () => {
     if (!data?.products) return
 
@@ -141,12 +164,12 @@ export function ProductsListClient({
     }
   }
 
-  // NEW: Clear all selections
+  // Clear all selections
   const clearSelection = () => setSelectedIds([])
 
   return (
     <div className="flex flex-col gap-4">
-      {/* NEW: Bulk Actions Bar (only visible when items selected) */}
+      {/* Bulk Actions Bar (only visible when items selected) */}
       {selectedIds.length > 0 && (
         <BulkActionsBar
           selectedIds={selectedIds}
@@ -156,6 +179,28 @@ export function ProductsListClient({
             // Optionally refetch data - tRPC cache invalidation handles this
           }}
         />
+      )}
+
+      {/* NEW: Low Stock Alert Banner */}
+      {lowStockCount > 0 && (
+        <Alert className="border-yellow-500 bg-yellow-50">
+          <AlertCircle className="h-4 w-4 bg-gray-900 rounded-full" />
+          <AlertTitle className="text-gray-800">Low Stock Alert</AlertTitle>
+          <AlertDescription className="flex flex-col justify-start sm:flex-row sm:justify-between sm:items-center">
+            <span className="text-gray-800 mb-4">
+              {lowStockCount} active product{lowStockCount === 1 ? '' : 's'}{' '}
+              running low on stock
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleViewLowStock}
+              className="border-yellow-600 text-gray-100 hover:bg-yellow-100"
+            >
+              View Low Stock Products
+            </Button>
+          </AlertDescription>
+        </Alert>
       )}
 
       {/* Filters and Actions */}
@@ -216,7 +261,7 @@ export function ProductsListClient({
           sortOrder={sortOrder}
           onSortChange={handleSortChange}
           onPageChange={handlePageChange}
-          // NEW: Pass selection props to ProductsTable
+          // Pass selection props to ProductsTable
           selectedIds={selectedIds}
           onToggleSelection={toggleSelection}
           onToggleSelectAll={toggleSelectAll}

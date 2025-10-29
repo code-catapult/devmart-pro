@@ -11,6 +11,7 @@ import {
   Users,
   LogOut,
   StoreIcon,
+  FolderTree,
 } from 'lucide-react'
 import { signOut } from 'next-auth/react'
 import { Route } from 'next'
@@ -38,6 +39,7 @@ export function AdminNavContent({ user, onNavigate }: AdminNavContentProps) {
     { label: 'Products', href: '/admin/products', icon: Package },
     { label: 'Orders', href: '/admin/orders', icon: ShoppingCart },
     { label: 'Users', href: '/admin/users', icon: Users },
+    { label: 'Categories', href: '/admin/categories', icon: FolderTree },
     { label: 'Store', href: '/products', icon: StoreIcon },
   ]
 

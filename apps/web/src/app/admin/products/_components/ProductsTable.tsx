@@ -1,5 +1,5 @@
 'use client'
-
+import { useState } from 'react'
 import {
   Badge,
   Button,
@@ -18,6 +18,7 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  Package,
 } from 'lucide-react'
 import Link from 'next/link'
 import type { ProductStatus } from '@repo/shared/types'
@@ -26,6 +27,8 @@ import { Route } from 'next'
 import Image from 'next/image'
 import type { RouterOutputs } from '~/utils/api'
 import { Pagination } from '~/components/ui/pagination'
+import { StockLevelBadge } from '~/components/admin/stock-level-badge'
+import { InventoryAdjustmentDialog } from '~/components/admin/inventory-adjustment-dialog'
 
 // Extract Product type from tRPC router output - always in sync with API
 type Product = RouterOutputs['admin']['products']['list']['products'][number]
@@ -72,6 +75,12 @@ export function ProductsTable({
   onToggleSelection,
   onToggleSelectAll,
 }: ProductsTableProps) {
+  const [productAdjustment, setProductAdjustment] = useState<{
+    id: string
+    name: string
+    inventory: number
+  } | null>(null)
+
   const formatPrice = (cents: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -248,18 +257,7 @@ export function ProductsTable({
                   </TableCell>
                   {/* Inventory */}
                   <TableCell>
-                    <span
-                      className={cn(
-                        product.inventory <= 10 &&
-                          'text-destructive font-medium',
-                        product.inventory > 10 &&
-                          product.inventory <= 50 &&
-                          'text-yellow-600 font-medium',
-                        product.inventory > 50 && 'text-gray-500 font-medium'
-                      )}
-                    >
-                      {product.inventory}
-                    </span>
+                    <StockLevelBadge inventory={product.inventory} />
                   </TableCell>
                   {/* Status */}
                   <TableCell>
@@ -279,6 +277,20 @@ export function ProductsTable({
                   {/* Actions */}
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() =>
+                          setProductAdjustment({
+                            id: product.id,
+                            name: product.name,
+                            inventory: product.inventory,
+                          })
+                        }
+                        title="Adjust Inventory"
+                      >
+                        <Package className="h-4 w-4" />
+                      </Button>
                       <Button variant="ghost" size="sm" asChild>
                         <Link
                           href={`/admin/products/${product.id}/edit` as Route}
@@ -361,21 +373,9 @@ export function ProductsTable({
               </div>
 
               {/* Inventory */}
-              <div className="flex items-center justify-between text-sm text-muted-foreground">
+              <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
                 <span>
-                  Stock:{' '}
-                  <span
-                    className={cn(
-                      'font-medium',
-                      product.inventory <= 10
-                        ? 'text-destructive font-semibold'
-                        : product.inventory > 10 && product.inventory <= 50
-                          ? 'text-yellow-600 font-semibold'
-                          : 'text-foreground'
-                    )}
-                  >
-                    {product.inventory}
-                  </span>
+                  <StockLevelBadge inventory={product.inventory} />
                 </span>
                 <span className="font-semibold text-base">
                   {formatPrice(product.price)}
@@ -383,6 +383,29 @@ export function ProductsTable({
               </div>
 
               {/* Action Buttons - Touch-friendly size */}
+              <div className="mb-12">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    setProductAdjustment({
+                      id: product.id,
+                      name: product.name,
+                      inventory: product.inventory,
+                    })
+                  }
+                  className="h-10 w-10"
+                  title="Adjust Inventory"
+                >
+                  <div className="relative">
+                    <span className="absolute bottom-3.5 left-5.25 text-lg">
+                      +
+                    </span>
+                    <Package className="h-10 w-10" />
+                  </div>
+                </Button>
+              </div>
+
               <div className="flex gap-2 pt-2">
                 <Button
                   variant="outline"
@@ -412,6 +435,24 @@ export function ProductsTable({
         itemsPerPage={pagination.limit}
         onPageChange={onPageChange}
       />
+
+      {/* Inventory Adjustment Dialog */}
+      {productAdjustment && (
+        <InventoryAdjustmentDialog
+          open={!!productAdjustment}
+          onOpenChange={(open) => {
+            if (!open) setProductAdjustment(null)
+          }}
+          productId={productAdjustment.id}
+          productName={productAdjustment.name}
+          currentInventory={productAdjustment.inventory}
+          onSuccess={() => {
+            setProductAdjustment(null)
+            // The mutation already invalidates the query,
+            // so the table will automatically refresh
+          }}
+        />
+      )}
     </div>
   )
 }
