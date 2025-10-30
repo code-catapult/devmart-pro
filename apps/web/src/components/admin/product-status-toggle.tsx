@@ -19,6 +19,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
 } from '@repo/ui'
 
 import { api } from '~/utils/api'
@@ -129,79 +133,97 @@ export function ProductStatusToggle({
 
   return (
     <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-auto p-0 hover:bg-transparent"
-            disabled={isDiscontinued || updateStatusMutation.isPending}
-          >
-            <Badge className={`gap-1 ${statusConfig.className}`}>
-              <StatusIcon className="h-3 w-3" />
-              {statusConfig.label}
-            </Badge>
-          </Button>
-        </DropdownMenuTrigger>
-
-        <DropdownMenuContent align="end">
-          {canActivate && (
-            <DropdownMenuItem
-              onClick={() => handleStatusChange('ACTIVE')}
-              className="gap-2"
-            >
-              <CheckCircle2 className="h-4 w-4 text-green-600" />
-              <div>
-                <p className="font-medium">Activate</p>
-                <p className="text-xs text-gray-500">
-                  Make visible on storefront
-                </p>
-              </div>
-            </DropdownMenuItem>
-          )}
-
-          {canDeactivate && (
-            <DropdownMenuItem
-              onClick={() => handleStatusChange('INACTIVE')}
-              className="gap-2"
-            >
-              <XCircle className="h-4 w-4 text-gray-600" />
-              <div>
-                <p className="font-medium">Deactivate</p>
-                <p className="text-xs text-gray-500">
-                  Temporarily hide from sales
-                </p>
-              </div>
-            </DropdownMenuItem>
-          )}
-
-          {canDiscontinue && (
-            <>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => handleStatusChange('DISCONTINUED')}
-                className="gap-2 text-red-600 focus:text-red-600"
-              >
+      <TooltipProvider>
+        {isDiscontinued ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="inline-block cursor-not-allowed">
+                <Badge className={`gap-1 ${statusConfig.className}`}>
+                  <StatusIcon className="h-3 w-3" />
+                  {statusConfig.label}
+                </Badge>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              <div className="flex items-center gap-2">
                 <Ban className="h-4 w-4" />
                 <div>
-                  <p className="font-medium">Discontinue</p>
-                  <p className="text-xs text-gray-500">
-                    Permanently remove (cannot undo)
+                  <p className="font-medium">Product is discontinued</p>
+                  <p className="text-xs text-gray-400">
+                    Status cannot be changed
                   </p>
                 </div>
-              </DropdownMenuItem>
-            </>
-          )}
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        ) : (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-auto p-0 hover:bg-transparent"
+                disabled={updateStatusMutation.isPending}
+              >
+                <Badge className={`gap-1 ${statusConfig.className}`}>
+                  <StatusIcon className="h-3 w-3" />
+                  {statusConfig.label}
+                </Badge>
+              </Button>
+            </DropdownMenuTrigger>
 
-          {isDiscontinued && (
-            <div className="px-2 py-3 text-center text-sm text-gray-500">
-              <Ban className="mx-auto mb-1 h-4 w-4" />
-              <p>Product is discontinued</p>
-              <p className="text-xs">Cannot change status</p>
-            </div>
-          )}
-        </DropdownMenuContent>
-      </DropdownMenu>
+            <DropdownMenuContent align="end">
+              {canActivate && (
+                <DropdownMenuItem
+                  onClick={() => handleStatusChange('ACTIVE')}
+                  className="gap-2"
+                >
+                  <CheckCircle2 className="h-4 w-4 text-green-600" />
+                  <div>
+                    <p className="font-medium">Activate</p>
+                    <p className="text-xs text-gray-500">
+                      Make visible on storefront
+                    </p>
+                  </div>
+                </DropdownMenuItem>
+              )}
+
+              {canDeactivate && (
+                <DropdownMenuItem
+                  onClick={() => handleStatusChange('INACTIVE')}
+                  className="gap-2"
+                >
+                  <XCircle className="h-4 w-4 text-gray-600" />
+                  <div>
+                    <p className="font-medium">Deactivate</p>
+                    <p className="text-xs text-gray-500">
+                      Temporarily hide from sales
+                    </p>
+                  </div>
+                </DropdownMenuItem>
+              )}
+
+              {canDiscontinue && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => handleStatusChange('DISCONTINUED')}
+                    className="gap-2 text-red-600 focus:text-red-600"
+                  >
+                    <Ban className="h-4 w-4" />
+                    <div>
+                      <p className="font-medium">Discontinue</p>
+                      <p className="text-xs text-gray-500">
+                        Permanently remove (cannot undo)
+                      </p>
+                    </div>
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+      </TooltipProvider>
 
       {/* Discontinue Confirmation Dialog */}
       <AlertDialog
