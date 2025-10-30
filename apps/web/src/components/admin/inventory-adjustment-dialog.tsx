@@ -82,7 +82,7 @@ export function InventoryAdjustmentDialog({
     onSuccess: () => {
       toast.success('Inventory updated')
       onSuccess()
-      utils.admin.products.list.invalidate()
+      void utils.admin.products.list.invalidate()
       onOpenChange(false)
     },
     onError: (error) => {

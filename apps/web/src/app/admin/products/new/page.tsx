@@ -30,12 +30,12 @@ export default function NewProductPage() {
 
   // Create product mutation
   const createProduct = api.admin.products.create.useMutation({
-    onSuccess: (newProduct) => {
+    onSuccess: async (newProduct) => {
       // Show success message
       toast.success(`Product "${newProduct.name}" created successfully`)
 
       // Invalidate product list cache (triggers refetch)
-      utils.admin.products.list.invalidate()
+      await utils.admin.products.list.invalidate()
 
       // Navigate to product list
       router.push('/admin/products')

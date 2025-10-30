@@ -1,9 +1,17 @@
 'use client'
 import { useState } from 'react'
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
   Badge,
   Button,
-  Checkbox, // NEW
+  Checkbox,
   Table,
   TableBody,
   TableCell,
@@ -21,14 +29,18 @@ import {
   Package,
 } from 'lucide-react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import type { ProductStatus } from '@repo/shared/types'
 import { cn } from '@repo/shared/utils'
 import { Route } from 'next'
 import Image from 'next/image'
 import type { RouterOutputs } from '~/utils/api'
+import { api } from '~/utils/api'
 import { Pagination } from '~/components/ui/pagination'
 import { StockLevelBadge } from '~/components/admin/stock-level-badge'
 import { InventoryAdjustmentDialog } from '~/components/admin/inventory-adjustment-dialog'
+import { ProductStatusToggle } from '~/components/admin/product-status-toggle'
+import { toast } from 'sonner'
 
 // Extract Product type from tRPC router output - always in sync with API
 type Product = RouterOutputs['admin']['products']['list']['products'][number]
@@ -81,24 +93,52 @@ export function ProductsTable({
     inventory: number
   } | null>(null)
 
+  // Delete product state
+  const [productToDelete, setProductToDelete] = useState<Product | null>(null)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+
+  // Delete product mutation
+  const utils = api.useUtils()
+  const router = useRouter()
+  const deleteMutation = api.admin.products.delete.useMutation({
+    onSuccess: async () => {
+      toast.success(
+        `"${productToDelete?.name}" has been discontinued successfully`
+      )
+
+      // Invalidate product list cache
+      await utils.admin.products.list.invalidate()
+
+      // Close dialog and reset state
+      setDeleteDialogOpen(false)
+      setProductToDelete(null)
+
+      // Refresh current page
+      router.refresh()
+    },
+    onError: (error) => {
+      toast.error(`Failed to delete product: ${error.message}`)
+    },
+  })
+
+  // Handle delete button click - capture product and open dialog
+  const handleDeleteClick = (product: Product) => {
+    setProductToDelete(product)
+    setDeleteDialogOpen(true)
+  }
+
+  // Handle delete confirmation
+  const handleDeleteConfirm = () => {
+    if (productToDelete) {
+      deleteMutation.mutate({ id: productToDelete.id, hardDelete: false })
+    }
+  }
+
   const formatPrice = (cents: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
     }).format(cents / 100)
-  }
-
-  const getStatusBadgeVariant = (status: ProductStatus) => {
-    switch (status) {
-      case 'ACTIVE':
-        return 'default'
-      case 'INACTIVE':
-        return 'secondary'
-      case 'DISCONTINUED':
-        return 'outline'
-      default:
-        return 'secondary'
-    }
   }
 
   const getSortIcon = (field: 'name' | 'price' | 'inventory' | 'createdAt') => {
@@ -261,18 +301,11 @@ export function ProductsTable({
                   </TableCell>
                   {/* Status */}
                   <TableCell>
-                    <Badge
-                      variant={getStatusBadgeVariant(product.status)}
-                      className={cn(
-                        product.status === 'ACTIVE'
-                          ? 'bg-active hover:bg-active-hover  text-gray-50'
-                          : product.status === 'INACTIVE'
-                            ? 'bg-inactive hover:bg-inactive-hover text-gray-50'
-                            : 'bg-discontinued hover:bg-discontinued-hover text-gray-50'
-                      )}
-                    >
-                      {product.status}
-                    </Badge>
+                    <ProductStatusToggle
+                      productId={product.id}
+                      currentStatus={product.status as ProductStatus}
+                      productName={product.name}
+                    />
                   </TableCell>
                   {/* Actions */}
                   <TableCell className="text-right">
@@ -299,7 +332,13 @@ export function ProductsTable({
                           <span className="sr-only">Edit {product.name}</span>
                         </Link>
                       </Button>
-                      <Button variant="ghost" size="sm">
+                      {/* Delete Button with Confirmation */}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteClick(product)}
+                        disabled={deleteMutation.isPending}
+                      >
                         <Trash2 className="h-4 w-4 text-destructive" />
                         <span className="sr-only">Delete {product.name}</span>
                       </Button>
@@ -345,23 +384,15 @@ export function ProductsTable({
                 />
                 <div className="flex-1 flex items-start justify-between gap-2">
                   <h3 className="font-semibold text-base">{product.name}</h3>
-                  <Badge
-                    className={cn(
-                      'shrink-0',
-                      product.status === 'ACTIVE'
-                        ? 'bg-active hover:bg-active-hover text-gray-50'
-                        : product.status === 'INACTIVE'
-                          ? 'bg-inactive hover:bg-inactive-hover text-gray-50'
-                          : 'bg-discontinued hover:bg-discontinued-hover text-gray-50'
-                    )}
-                    variant={getStatusBadgeVariant(product.status)}
-                  >
-                    {product.status}
-                  </Badge>
+                  <ProductStatusToggle
+                    productId={product.id}
+                    currentStatus={product.status}
+                    productName={product.name}
+                  />
                 </div>
               </div>
 
-              {/* Category & Price */}
+              {/* Category */}
               <div className="text-sm mb-8">
                 <div className="flex items-center gap-2">
                   {product.category ? (
@@ -372,8 +403,8 @@ export function ProductsTable({
                 </div>
               </div>
 
-              {/* Inventory */}
-              <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
+              {/* Inventory & Price */}
+              <div className="flex items-center justify-between text-sm mb-2">
                 <span>
                   <StockLevelBadge inventory={product.inventory} />
                 </span>
@@ -383,7 +414,7 @@ export function ProductsTable({
               </div>
 
               {/* Action Buttons - Touch-friendly size */}
-              <div className="mb-12">
+              <div className="mb-2">
                 <Button
                   variant="outline"
                   size="sm"
@@ -418,7 +449,13 @@ export function ProductsTable({
                     Edit
                   </Link>
                 </Button>
-                <Button variant="outline" size="sm" className="h-10 px-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-10 px-3"
+                  onClick={() => handleDeleteClick(product)}
+                  disabled={deleteMutation.isPending}
+                >
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>
@@ -453,6 +490,34 @@ export function ProductsTable({
           }}
         />
       )}
+
+      {/* Delete Product Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will discontinue &ldquo;{productToDelete?.name}&rdquo;. The
+              product will no longer be visible to customers, but order history
+              will be preserved.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              disabled={deleteMutation.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteMutation.isPending
+                ? 'Discontinuing...'
+                : 'Discontinue Product'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

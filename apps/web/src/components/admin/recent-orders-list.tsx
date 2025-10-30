@@ -43,8 +43,8 @@ export function RecentOrdersList() {
     api.admin.dashboard.updateOrderStatus.useMutation({
       onSuccess: () => {
         // Invalidate and refetch orders
-        utils.admin.dashboard.getRecentOrders.invalidate()
-        utils.admin.dashboard.getDashboardMetrics.invalidate()
+        void utils.admin.dashboard.getRecentOrders.invalidate()
+        void utils.admin.dashboard.getDashboardMetrics.invalidate()
       },
     })
 

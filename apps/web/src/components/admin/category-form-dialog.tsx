@@ -120,7 +120,7 @@ export function CategoryFormDialog({
       toast.success('Category created')
       reset()
       onSuccess()
-      utils.admin.categories.getTree.invalidate()
+      void utils.admin.categories.getTree.invalidate()
     },
     onError: (error) => {
       toast.error(`Failed to create category: ${error.message}`)
@@ -132,7 +132,7 @@ export function CategoryFormDialog({
     onSuccess: () => {
       toast.success('Category updated')
       onSuccess()
-      utils.admin.categories.getTree.invalidate()
+      void utils.admin.categories.getTree.invalidate()
     },
     onError: (error) => {
       toast.error(`Failed to update category: ${error.message}`)

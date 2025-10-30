@@ -11,6 +11,7 @@ import {
   bulkUpdatePricesSchema,
   adjustInventorySchema,
   productMetricsSchema,
+  updateProductStatusSchema,
 } from './schema'
 
 /**
@@ -295,5 +296,17 @@ export const productsRouter = createTRPCRouter({
     .input(productMetricsSchema)
     .query(async ({ input }) => {
       return await productAdminService.calculateProductMetrics(input.id)
+    }),
+
+  /**
+   * Update product status (Story 3.2 - Task 14)
+   */
+  updateStatus: adminProcedure
+    .input(updateProductStatusSchema)
+    .mutation(async ({ input }) => {
+      return await productAdminService.updateProductStatus(
+        input.productId,
+        input.status
+      )
     }),
 })

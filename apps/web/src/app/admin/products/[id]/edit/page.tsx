@@ -51,12 +51,12 @@ export default function EditProductPage({
 
   // Update product mutation
   const updateProduct = api.admin.products.update.useMutation({
-    onSuccess: (updatedProduct) => {
+    onSuccess: async (updatedProduct) => {
       toast.success(`Product "${updatedProduct.name}" updated successfully`)
 
       // Invalidate both list and detail caches
-      utils.admin.products.list.invalidate()
-      utils.admin.products.getById.invalidate({ id: productId })
+      await utils.admin.products.list.invalidate()
+      await utils.admin.products.getById.invalidate({ id: productId })
 
       router.push('/admin/products')
     },
@@ -67,11 +67,11 @@ export default function EditProductPage({
 
   // Delete product mutation
   const deleteProduct = api.admin.products.delete.useMutation({
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success('Product discontinued successfully')
 
       // Invalidate product list cache
-      utils.admin.products.list.invalidate()
+      await utils.admin.products.list.invalidate()
 
       router.push('/admin/products')
     },

@@ -60,3 +60,6 @@ redis_data/
 
 # Coding agents
 .claude
+
+# Miscellaneous
+project-optimizations.md

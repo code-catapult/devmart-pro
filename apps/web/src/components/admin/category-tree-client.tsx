@@ -37,7 +37,7 @@ export function CategoryTreeClient({
   const deleteMutation = api.admin.categories.delete.useMutation({
     onSuccess: () => {
       toast.success('Category deleted')
-      utils.admin.categories.getTree.invalidate()
+      void utils.admin.categories.getTree.invalidate()
     },
     onError: (error) => {
       toast.error(`Failed to delete: ${error.message}`)
@@ -66,7 +66,7 @@ export function CategoryTreeClient({
     setFormOpen(false)
     setEditingCategory(null)
     setParentId(null)
-    utils.admin.categories.getTree.invalidate()
+    void utils.admin.categories.getTree.invalidate()
   }
 
   return (

@@ -68,7 +68,7 @@ export function BulkActionsBar({
       toast.success(`${result.count} products discontinued`)
       onClearSelection()
       onSuccess()
-      utils.admin.products.list.invalidate()
+      void utils.admin.products.list.invalidate()
       setDeleteDialogOpen(false)
     },
     onError: (error) => {
@@ -83,7 +83,7 @@ export function BulkActionsBar({
         toast.success(`${result.count} products updated`)
         onClearSelection()
         onSuccess()
-        utils.admin.products.list.invalidate()
+        void utils.admin.products.list.invalidate()
         setPriceDialogOpen(false)
       },
       onError: (error) => {

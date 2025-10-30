@@ -191,3 +191,11 @@ export const deleteCategorySchema = z.object({
     .default(false)
     .describe('If true, moves products to parent category before deletion'),
 })
+
+/**
+ * Update Product Status Schema
+ */
+export const updateProductStatusSchema = z.object({
+  productId: z.cuid('Invalid product ID'),
+  status: z.enum(ProductStatus),
+})
