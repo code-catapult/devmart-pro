@@ -29,6 +29,16 @@
   --color-card: hsl(0 0% 100%);
   --color-card-foreground: hsl(222.2 84% 4.9%);
 
+  /* Product Status */
+
+  --color-active: hsl(199, 40%, 43%);
+  --color-active-hover: hsl(199, 40%, 33%);
+  --color-inactive: hsl(214, 32%, 85%);
+  --color-inactive-hover: hsl(214 32% 75%);
+  --color-inactive-text: hsl(217 33% 17%);
+  --color-discontinued: hsl(21 90% 56%);
+  --color-discontinued-hover: hsl(21 90% 46%);
+
   --radius: 0.5rem;
 }
 
@@ -44,6 +54,7 @@ body {
 @media (prefers-color-scheme: dark) {
   @theme {
     --color-background: hsl(222.2 84% 4.9%);
+    --color-muted-background: hsl(215 20.2% 95.1%);
     --color-foreground: hsl(210 40% 98%);
     --color-card: hsl(222.2 84% 4.9%);
     --color-card-foreground: hsl(210 40% 98%);
@@ -57,7 +68,7 @@ body {
     --color-muted-foreground: hsl(215 20.2% 65.1%);
     --color-accent: hsl(217.2 32.6% 17.5%);
     --color-accent-foreground: hsl(210 40% 98%);
-    --color-destructive: hsl(0 62.8% 30.6%);
+    --color-destructive: hsl(0 62.8% 50.6%);
     --color-destructive-foreground: hsl(210 40% 98%);
     --color-border: hsl(217.2 32.6% 17.5%);
     --color-input: hsl(217.2 32.6% 17.5%);

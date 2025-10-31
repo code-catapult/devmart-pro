@@ -152,5 +152,4 @@ export const selectItemCount = (state: { cart: CartState }) =>
   state.cart.totalItems
 export const selectCartOpen = (state: { cart: CartState }) => state.cart.isOpen
 
-// Default export for reducer (consistent with appSlice and authSlice)
 export default cartSlice.reducer

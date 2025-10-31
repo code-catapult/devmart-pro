@@ -11,6 +11,7 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   const isOutOfStock = product.inventory === 0
+  const isLowStock = product.inventory > 0 && product.inventory <= 10
 
   return (
     <Card className="group hover:shadow-lg transition-shadow duration-200">
@@ -28,6 +29,11 @@ export function ProductCard({ product }: ProductCardProps) {
             {isOutOfStock && (
               <Badge variant="destructive" className="absolute top-2 right-2">
                 Out of Stock
+              </Badge>
+            )}
+            {isLowStock && (
+              <Badge variant="warning" className="absolute top-2 right-2">
+                Low Stock
               </Badge>
             )}
           </div>

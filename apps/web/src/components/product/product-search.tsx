@@ -37,23 +37,24 @@ export function ProductSearch() {
   }
 
   return (
-    <div className="relative">
-      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+    <div className="relative w-full">
+      <Search className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
       <Input
         type="text"
-        placeholder="Search products..."
+        placeholder="Search..."
         value={searchTerm}
         onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
           setSearchTerm(e.target.value)
         }
-        className="pl-10 pr-10"
+        className="pl-8 pr-10 sm:pl-10 w-full"
       />
       {searchTerm && (
         <Button
           variant="ghost"
           size="sm"
-          className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
+          className="absolute right-0.5 sm:right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
           onClick={handleClear}
+          aria-label="Clear search"
         >
           <X className="h-4 w-4" />
         </Button>
