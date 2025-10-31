@@ -46,7 +46,7 @@ export default function HomePage() {
       {/* Hero Section */}
       <section className="bg-gradient-to-b from-blue-50 to-white py-64">
         <div className="container mx-auto px-4 text-center ">
-          <Badge variant="secondary" className="mb-4 text-gray-600">
+          <Badge variant="secondary" className="mb-4">
             Now in Development
           </Badge>
           <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">

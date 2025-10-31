@@ -57,6 +57,10 @@ export class ProductAdminService {
     search?: string
     categoryId?: string
     status?: ProductStatus | 'ALL'
+    priceMin?: number
+    priceMax?: number
+    inventoryMin?: number
+    inventoryMax?: number
     sortBy?: 'name' | 'price' | 'inventory' | 'createdAt'
     sortOrder?: 'asc' | 'desc'
     page?: number
@@ -67,6 +71,10 @@ export class ProductAdminService {
       search,
       categoryId,
       status = 'ALL',
+      priceMin,
+      priceMax,
+      inventoryMin,
+      inventoryMax,
       sortBy = 'createdAt',
       sortOrder = 'desc',
       page = 1,
@@ -87,6 +95,25 @@ export class ProductAdminService {
       ...(categoryId && { categoryId }),
       // Filter by status (exclude 'ALL')
       ...(status !== 'ALL' && { status }),
+
+      // Filter by price range (in cents)
+      ...(priceMin !== undefined && { price: { gte: priceMin } }),
+      ...(priceMax !== undefined && {
+        price:
+          priceMin !== undefined
+            ? { gte: priceMin, lte: priceMax }
+            : { lte: priceMax },
+      }),
+
+      // Filter by inventory range
+      ...(inventoryMin !== undefined && { inventory: { gte: inventoryMin } }),
+      ...(inventoryMax !== undefined && {
+        inventory:
+          inventoryMin !== undefined
+            ? { gte: inventoryMin, lte: inventoryMax }
+            : { lte: inventoryMax },
+      }),
+
       ...(lowStockOnly && {
         inventory: { lt: 10 }, // Low stock threshold: < 10 units
         status: 'ACTIVE', // Only shows active products

@@ -9,14 +9,10 @@ import {
   AlertTitle,
   Button,
   Input,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
 } from '@repo/ui'
 import { ProductsTable } from './ProductsTable'
 import { BulkActionsBar } from '~/components/admin/bulk-actions'
+import { ProductFilters } from '~/components/admin/product-filters'
 import { useDebounce } from '~/hooks/use-debounce'
 import { PlusCircle, AlertCircle } from 'lucide-react' // NEW: Add AlertCircle
 import Link from 'next/link'
@@ -27,6 +23,10 @@ interface ProductsListClientProps {
     search: string
     categoryId?: string
     status: string
+    priceMin?: number
+    priceMax?: number
+    inventoryMin?: number
+    inventoryMax?: number
     sortBy: 'name' | 'price' | 'inventory' | 'createdAt'
     sortOrder: 'asc' | 'desc'
     page: number
@@ -61,10 +61,15 @@ export function ProductsListClient({
   // Fetch products with tRPC
   const { data, isLoading, error } = api.admin.products.list.useQuery({
     search: debouncedSearch,
+    categoryId: initialFilters.categoryId,
     status:
       status === 'ALL'
         ? undefined
         : (status as 'ACTIVE' | 'INACTIVE' | 'DISCONTINUED'),
+    priceMin: initialFilters.priceMin,
+    priceMax: initialFilters.priceMax,
+    inventoryMin: initialFilters.inventoryMin,
+    inventoryMax: initialFilters.inventoryMax,
     sortBy,
     sortOrder,
     page,
@@ -103,11 +108,11 @@ export function ProductsListClient({
   }
 
   // Handle status filter change
-  const handleStatusChange = (value: string) => {
-    setStatus(value)
-    setPage(1)
-    updateURL({ status: value, page: 1 })
-  }
+  // const handleStatusChange = (value: string) => {
+  //   setStatus(value)
+  //   setPage(1)
+  //   updateURL({ status: value, page: 1 })
+  // }
 
   // Handle sort change
   const handleSortChange = (field: typeof sortBy) => {
@@ -214,7 +219,7 @@ export function ProductsListClient({
         />
 
         {/* Status Filter */}
-        <Select value={status} onValueChange={handleStatusChange}>
+        {/* <Select value={status} onValueChange={handleStatusChange}>
           <SelectTrigger className="md:w-[180px] text-gray-500">
             <SelectValue placeholder="Filter by status" />
           </SelectTrigger>
@@ -224,7 +229,8 @@ export function ProductsListClient({
             <SelectItem value="INACTIVE">Inactive</SelectItem>
             <SelectItem value="DISCONTINUED">Discontinued</SelectItem>
           </SelectContent>
-        </Select>
+        </Select> */}
+        <ProductFilters />
 
         {/* Spacer */}
         <div className="flex-1" />

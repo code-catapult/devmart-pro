@@ -21,6 +21,10 @@ export default async function ProductsPage({
     search?: string
     category?: string
     status?: string
+    priceMin?: string
+    priceMax?: string
+    inventoryMin?: string
+    inventoryMax?: string
     page?: string
     sortBy?: string
     sortOrder?: string
@@ -32,6 +36,23 @@ export default async function ProductsPage({
   const search = params.search || ''
   const categoryId = params.category || undefined
   const status = params.status || 'ALL'
+
+  // Parse price filters (convert dollars to cents)
+  const priceMin = params.priceMin
+    ? parseInt(params.priceMin, 10) * 100
+    : undefined
+  const priceMax = params.priceMax
+    ? parseInt(params.priceMax, 10) * 100
+    : undefined
+
+  // Parse inventory filters
+  const inventoryMin = params.inventoryMin
+    ? parseInt(params.inventoryMin, 10)
+    : undefined
+  const inventoryMax = params.inventoryMax
+    ? parseInt(params.inventoryMax, 10)
+    : undefined
+
   const sortBy = (params.sortBy || 'createdAt') as
     | 'name'
     | 'price'
@@ -60,6 +81,10 @@ export default async function ProductsPage({
             search,
             categoryId,
             status,
+            priceMin,
+            priceMax,
+            inventoryMin,
+            inventoryMax,
             sortBy,
             sortOrder,
             page,

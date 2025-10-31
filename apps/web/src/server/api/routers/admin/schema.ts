@@ -68,6 +68,31 @@ export const productListSchema = z.object({
     .union([z.enum(ProductStatus), z.literal('ALL')])
     .optional()
     .default('ALL'),
+
+  // Price range filters (in cents)
+  priceMin: z
+    .number()
+    .int('Price must be a whole number (in cents)')
+    .min(0, 'Price cannot be negative')
+    .optional(),
+  priceMax: z
+    .number()
+    .int('Price must be a whole number (in cents)')
+    .min(0, 'Price cannot be negative')
+    .optional(),
+
+  // Inventory range filters
+  inventoryMin: z
+    .number()
+    .int('Inventory must be a whole number')
+    .min(0, 'Inventory cannot be negative')
+    .optional(),
+  inventoryMax: z
+    .number()
+    .int('Inventory must be a whole number')
+    .min(0, 'Inventory cannot be negative')
+    .optional(),
+
   sortBy: z
     .enum(['name', 'price', 'inventory', 'createdAt'])
     .optional()

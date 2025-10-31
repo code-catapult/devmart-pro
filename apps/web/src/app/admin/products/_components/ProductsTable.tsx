@@ -279,12 +279,7 @@ export function ProductsTable({
                   {/* Category */}
                   <TableCell>
                     {product.category ? (
-                      <Badge
-                        variant="outline"
-                        className="text-muted-foreground"
-                      >
-                        {product.category.name}
-                      </Badge>
+                      <Badge variant="outline">{product.category.name}</Badge>
                     ) : (
                       <span className="text-muted-foreground">
                         Uncategorized
