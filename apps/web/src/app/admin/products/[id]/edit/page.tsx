@@ -105,7 +105,7 @@ export default function EditProductPage({
       {/* Header with Back and Delete Buttons */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4">
         <div className="flex items-center gap-4 mb-4">
-          <Button variant="ghost" size="icon" asChild className="text-gray-700">
+          <Button variant="outline" size="icon" asChild>
             <Link href="/admin/products">
               <ArrowLeft className="h-4 w-4" />
             </Link>

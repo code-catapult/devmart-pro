@@ -108,12 +108,7 @@ function CategoryTreeNode({
         </div>
 
         {/* Product Count Badge - Fixed to right */}
-        <Badge
-          variant="secondary"
-          className="text-xs bg-gray-500 text-gray-50 shrink-0"
-        >
-          {category._count.products}
-        </Badge>
+        <Badge variant="secondary">{category._count.products}</Badge>
 
         {/* Action Buttons - Fixed to right, always visible on mobile, hover on desktop */}
         <div className="flex gap-1.5 md:gap-1 opacity-100 md:opacity-20 transition-opacity md:group-hover:opacity-100 shrink-0">

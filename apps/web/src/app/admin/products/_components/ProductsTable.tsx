@@ -447,7 +447,7 @@ export function ProductsTable({
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-10 px-3"
+                  className="h-10 px-3 text-destructive"
                   onClick={() => handleDeleteClick(product)}
                   disabled={deleteMutation.isPending}
                 >
