@@ -150,6 +150,11 @@ model Order {
   shippingCarrier    String?   @map("shipping_carrier")
   estimatedDelivery  DateTime? @map("estimated_delivery")
 
+  // Refund tracking
+  refundAmount  Int?      @map("refund_amount") // Amount refunded in cents
+  refundReason  String?   @map("refund_reason") // Reason for refund
+  refundedAt    DateTime? @map("refunded_at") // When refund was processed
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 

@@ -34,6 +34,9 @@ async function testEmail() {
       trackingNumber: 'TRACK123456',
       shippingCarrier: 'UPS',
       estimatedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      refundAmount: 0,
+      refundReason: null,
+      refundedAt: null,
       createdAt: new Date(),
       updatedAt: new Date(),
       orderItems: [
