@@ -145,6 +145,11 @@ model Order {
   // Shipping address stored as JSON for flexibility
   shippingAddress Json @map("shipping_address")
 
+  // Shipping tracking information
+  trackingNumber     String?   @map("tracking_number")
+  shippingCarrier    String?   @map("shipping_carrier")
+  estimatedDelivery  DateTime? @map("estimated_delivery")
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 

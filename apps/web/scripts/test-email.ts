@@ -31,6 +31,9 @@ async function testEmail() {
       shipping: 500,
       total: 6978,
       stripePaymentIntentId: 'pi_test_123456789',
+      trackingNumber: 'TRACK123456',
+      shippingCarrier: 'UPS',
+      estimatedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       createdAt: new Date(),
       updatedAt: new Date(),
       orderItems: [

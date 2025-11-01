@@ -155,6 +155,59 @@ export class EmailService {
     }
   }
 
+  async sendEmail(params: {
+    to: string
+    subject: string
+    html: string
+  }): Promise<void> {
+    const { to, subject, html } = params
+
+    // Validate email address
+    if (!isValidEmail(to)) {
+      console.error('❌ Invalid email address:', { email: to })
+      return
+    }
+
+    // Check if SES is configured
+    if (!this.sesClient) {
+      console.log('⚠️ AWS credentials not configured - skipping email', {
+        to,
+        subject,
+      })
+      return
+    }
+
+    try {
+      const config = getEmailConfig()
+      if (!config) return
+
+      const command = new SendEmailCommand({
+        Source: config.fromAddress,
+        Destination: {
+          ToAddresses: [to],
+        },
+        Message: {
+          Subject: {
+            Data: subject,
+          },
+          Body: {
+            Html: { Data: html },
+          },
+        },
+      })
+
+      await this.sesClient.send(command)
+      console.log('✅ Email sent successfully', { to, subject })
+    } catch (error) {
+      console.error('❌ Failed to send email:', {
+        to,
+        subject,
+        error: error instanceof Error ? error.message : String(error),
+      })
+      // Don't throw - email failure shouldn't block operations
+    }
+  }
+
   private generateOrderConfirmationHTML(
     order: Order,
     userName?: string
