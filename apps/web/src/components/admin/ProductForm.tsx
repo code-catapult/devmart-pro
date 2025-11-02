@@ -164,7 +164,7 @@ export function ProductForm({
             </FormItem>
           )}
         />
-        ;{/* Description */}
+        {/* Description */}
         <FormField
           control={form.control}
           name="description"

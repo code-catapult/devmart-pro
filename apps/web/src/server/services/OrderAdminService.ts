@@ -2,6 +2,7 @@ import { prisma } from '~/lib/prisma'
 import { TRPCError } from '@trpc/server'
 import { OrderStatus, type Prisma } from '@prisma/client'
 import { EmailService } from '~/server/services/EmailService' // From Story 2.4
+import { invalidateCacheKey, invalidateCache } from '~/lib/cache'
 
 // Valid status transitions (state machine)
 const VALID_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
@@ -208,7 +209,17 @@ export class OrderAdminService {
       }
     )
 
-    // 5. Log audit trail (in production, save to separate audit table)
+    // 5. Invalidate affected caches
+    // Run invalidations in parallel, but don't fail mutation if invalidation fails
+    await Promise.all([
+      invalidateCacheKey('admin:metrics'), // Dashboard KPIs affected
+      invalidateCache('admin:analytics:*'), // Sales analytics affected (if DELIVERED)
+    ]).catch((err) => {
+      // Log but don't throw - cache invalidation failure is non-fatal
+      console.error('⚠️  Cache invalidation failed after order update:', err)
+    })
+
+    // 6. Log audit trail (in production, save to separate audit table)
     console.log(
       `[AUDIT] Admin ${adminUserId} changed order ${orderId} status: ${
         order.status
@@ -423,6 +434,19 @@ export class OrderAdminService {
           )
         })
       }
+    })
+
+    // Invalidate affected caches
+    // Run invalidations in parallel, but don't fail mutation if invalidation fails
+    await Promise.all([
+      invalidateCacheKey('admin:metrics'), // Dashboard KPIs affected
+      invalidateCache('admin:analytics:*'), // Sales analytics affected (if DELIVERED)
+    ]).catch((err) => {
+      // Log but don't throw - cache invalidation failure is non-fatal
+      console.error(
+        '⚠️  Cache invalidation failed after bulk order update:',
+        err
+      )
     })
 
     // Audit log
