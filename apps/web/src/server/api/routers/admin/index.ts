@@ -2,7 +2,7 @@ import { createTRPCRouter } from '~/server/api/trpc'
 import { productsRouter } from './products'
 import { categoriesRouter } from './categories'
 import { dashboardRouter } from './dashboard'
-import { ordersRouter } from '../orders'
+import { ordersRouter } from './orders'
 
 /**
  * Admin Router

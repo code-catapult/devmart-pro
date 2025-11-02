@@ -65,3 +65,7 @@ redis_data/
 project-optimizations.md
 orderadminservice-updates.md
 refundservice-updates.md
+sku-migration-strategy.md
+BACKFILL-TROUBLESHOOTING.md
+diagnose-sku-issues.ts
+backfill-skus.ts

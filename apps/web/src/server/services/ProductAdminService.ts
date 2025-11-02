@@ -89,6 +89,12 @@ export class ProductAdminService {
         OR: [
           { name: { contains: search, mode: 'insensitive' as const } },
           { description: { contains: search, mode: 'insensitive' as const } },
+          {
+            sku: {
+              contains: search.toUpperCase(),
+              mode: 'insensitive' as const,
+            },
+          },
         ],
       }),
       // Filter by category
@@ -232,6 +238,7 @@ export class ProductAdminService {
     images: string[] // S3 URLs
     status?: ProductStatus
     slug?: string // Optional: admin can override
+    sku: string
   }) {
     // Validate inventory
     if (data.inventory < 0) {
@@ -267,6 +274,15 @@ export class ProductAdminService {
       throw new Error(`Category not found: ${data.categoryId}`)
     }
 
+    if (data.sku) {
+      const existingSKU = await prisma.product.findUnique({
+        where: { sku: data.sku },
+      })
+      if (existingSKU) {
+        throw new Error('A product with this SKU already exists')
+      }
+    }
+
     // Create product
     const product = await prisma.product.create({
       data: {
@@ -278,6 +294,7 @@ export class ProductAdminService {
         images: data.images, // ← Prisma stores as JSON array
         status: data.status || 'ACTIVE',
         slug,
+        sku: data.sku,
       },
       include: {
         category: true,

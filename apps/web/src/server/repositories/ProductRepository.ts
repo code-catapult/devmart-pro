@@ -91,6 +91,15 @@ export class ProductRepository {
   }
 
   /**
+   * Find a product by its SKU
+   */
+  async findBySku(sku: string) {
+    return await prisma.product.findUnique({
+      where: { sku },
+    })
+  }
+
+  /**
    * Find related products based on category (exclude current product)
    */
 

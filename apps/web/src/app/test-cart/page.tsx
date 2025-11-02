@@ -20,6 +20,7 @@ export default function TestCartPage() {
             id: 'prod-1',
             name: 'Test Product',
             slug: 'test-product',
+            sku: 'TEST-PROD-001',
             description: 'Test description',
             price: 2999, // $29.99
             comparePrice: null,

@@ -12,6 +12,7 @@ export interface Product {
   id: string;
   name: string;
   slug: string;
+  sku: string;
   description: string | null;
   price: number; // Stored in cents
   comparePrice: number | null;
@@ -40,6 +41,7 @@ export interface ProductListItem {
   id: string;
   name: string;
   slug: string;
+  sku: string | null;
   price: number;
   comparePrice: number | null;
   images: string[];

@@ -47,6 +47,14 @@ export const productCreateSchema = z.object({
         .optional()
     )
     .describe('Auto-generated if not provided'),
+  sku: z
+    .string()
+    .min(1, 'SKU is required')
+    .max(50, 'SKU must be 50 characters or less')
+    .regex(
+      /^[A-Z0-9-]+$/,
+      'SKU must contain only uppercase letters, numbers, and hyphens'
+    ),
 })
 
 // ✨ ENHANCED: Composition with .partial() for updates
@@ -55,6 +63,7 @@ export const productUpdateSchema = productCreateSchema
   .extend({
     id: z.cuid('Invalid product ID'),
   })
+  .omit({ sku: true })
   .refine(
     (data) => Object.keys(data).length > 1, // At least one field besides ID
     { message: 'At least one field must be provided for update' }

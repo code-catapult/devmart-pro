@@ -188,6 +188,8 @@ export function ProductsTable({
                   {getSortIcon('name')}
                 </Button>
               </TableHead>
+              {/* SKU */}
+              <TableHead>SKU</TableHead>
               {/* Category */}
               <TableHead>Category</TableHead>
               {/* Price (Sortable) */}
@@ -274,6 +276,12 @@ export function ProductsTable({
                           </div>
                         )}
                       </div>
+                    </div>
+                  </TableCell>
+                  {/* SKU */}
+                  <TableCell>
+                    <div className="font-mono text-sm text-muted-foreground">
+                      {product.sku || '—'}
                     </div>
                   </TableCell>
                   {/* Category */}
@@ -409,7 +417,7 @@ export function ProductsTable({
               </div>
 
               {/* Action Buttons - Touch-friendly size */}
-              <div className="mb-2">
+              <div className="mb-6">
                 <Button
                   variant="outline"
                   size="sm"
@@ -432,7 +440,14 @@ export function ProductsTable({
                 </Button>
               </div>
 
-              <div className="flex gap-2 pt-2">
+              {/* Product SKU */}
+              {product.sku && (
+                <div className="font-mono text-muted-foreground">
+                  <small>SKU: {product.sku}</small>
+                </div>
+              )}
+
+              <div className="flex gap-2">
                 <Button
                   variant="outline"
                   size="sm"

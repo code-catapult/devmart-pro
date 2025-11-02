@@ -107,6 +107,7 @@ model Product {
   id          String        @id @default(cuid())
   name        String
   slug        String        @unique
+  sku         String       @unique
   description String?
   price       Int           // Stored in cents for precision
   comparePrice Int?         @map("compare_price") // Optional compare-at price
@@ -127,6 +128,7 @@ model Product {
   @@index([categoryId])
   @@index([slug])
   @@index([status])
+  @@index([sku])
   @@map("products")
 }
 

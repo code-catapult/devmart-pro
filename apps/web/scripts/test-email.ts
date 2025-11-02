@@ -50,6 +50,7 @@ async function testEmail() {
             id: 'test-product-1',
             name: 'Premium Wireless Headphones',
             slug: 'premium-wireless-headphones',
+            sku: 'HEADPHONES-001',
             description: 'High-quality wireless headphones',
             price: 2999,
             comparePrice: null,
