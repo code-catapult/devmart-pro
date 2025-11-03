@@ -32,7 +32,8 @@ import {
   AlertCircle,
 } from 'lucide-react'
 
-import { StatusUpdateDialog } from '~/components/admin/StatusUpdateDialog'
+import { StatusUpdateDialog } from '~/components/admin/orders/StatusUpdateDialog'
+import { RefundDialog } from '~/components/admin/orders/RefundDialog'
 
 // Status badge variants (same as list page)
 const STATUS_VARIANTS: Record<
@@ -53,7 +54,7 @@ export default function OrderDetailPage() {
 
   // State for dialogs
   const [showStatusDialog, setShowStatusDialog] = useState(false)
-  const [_showRefundDialog, setShowRefundDialog] = useState(false)
+  const [showRefundDialog, setShowRefundDialog] = useState(false)
 
   // Fetch order details
   const {
@@ -156,6 +157,18 @@ export default function OrderDetailPage() {
             <RefreshCw className="mr-2 h-4 w-4" />
             Update Status
           </Button>
+          {/* Refund Button - Only show if order has payment and isn't fully refunded */}
+          {order.stripePaymentIntentId &&
+            (order.refundAmount || 0) < order.total && (
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={() => setShowRefundDialog(true)}
+              >
+                <DollarSign className="mr-2 h-4 w-4" />
+                Process Refund
+              </Button>
+            )}
         </div>
       </div>
 
@@ -543,6 +556,18 @@ export default function OrderDetailPage() {
         onSuccess={() => {
           // Dialog automatically refetches order data via tRPC cache invalidation
           console.log('Order status updated successfully')
+        }}
+      />
+
+      {/* Refund Dialog */}
+      <RefundDialog
+        orderId={orderId}
+        orderTotal={order.total}
+        refundedAmount={order.refundAmount || 0}
+        open={showRefundDialog}
+        onOpenChange={setShowRefundDialog}
+        onSuccess={() => {
+          console.log('Refund processed successfully')
         }}
       />
     </div>
