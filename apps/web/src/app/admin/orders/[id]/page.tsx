@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
+import Link from 'next/link'
 import { api } from '~/utils/api'
 import { formatCurrency, formatDateTime, formatDate } from '@repo/shared/utils'
 import { OrderStatus, ShippingAddress } from '@repo/shared/types'
@@ -19,6 +20,7 @@ import {
 
 import {
   ArrowLeft,
+  XCircle,
   RefreshCw,
   Package,
   CreditCard,
@@ -29,6 +31,8 @@ import {
   DollarSign,
   AlertCircle,
 } from 'lucide-react'
+
+import { StatusUpdateDialog } from '~/components/admin/StatusUpdateDialog'
 
 // Status badge variants (same as list page)
 const STATUS_VARIANTS: Record<
@@ -48,7 +52,7 @@ export default function OrderDetailPage() {
   const orderId = params.id as string
 
   // State for dialogs
-  const [_showStatusDialog, setShowStatusDialog] = useState(false)
+  const [showStatusDialog, setShowStatusDialog] = useState(false)
   const [_showRefundDialog, setShowRefundDialog] = useState(false)
 
   // Fetch order details
@@ -63,8 +67,11 @@ export default function OrderDetailPage() {
   // Loading state
   if (isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <RefreshCw className="h-8 w-8 animate-spin text-gray-400" />
+      <div className="flex h-[50vh] items-center justify-center">
+        <div className="text-center">
+          <div className="mb-4 inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent" />
+          <p className="text-sm text-gray-500">Loading order details...</p>
+        </div>
       </div>
     )
   }
@@ -72,16 +79,38 @@ export default function OrderDetailPage() {
   // Error state
   if (error || !order) {
     return (
-      <div className="flex h-screen items-center justify-center">
+      <div className="flex h-[50vh] items-center justify-center">
         <div className="text-center">
-          <AlertCircle className="mx-auto h-8 w-8 text-red-500" />
-          <p className="mt-2 text-sm text-red-600">Order not found</p>
-          <Button className="mt-4" onClick={() => router.push('/admin/orders')}>
-            Back to Orders
+          <XCircle className="mx-auto mb-4 h-12 w-12 text-red-500" />
+          <h2 className="mb-2 text-xl font-semibold">Order Not Found</h2>
+          <p className="mb-4 text-sm text-gray-500">
+            {error?.message || 'Unable to load order details'}
+          </p>
+          <Button asChild variant="outline">
+            <Link href="/admin/orders">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Orders
+            </Link>
           </Button>
         </div>
       </div>
     )
+  }
+
+  // Status badge styling
+  const getStatusBadgeVariant = (status: string) => {
+    switch (status) {
+      case 'DELIVERED':
+        return 'default' // green
+      case 'SHIPPED':
+        return 'secondary' // blue
+      case 'PROCESSING':
+        return 'outline' // gray
+      case 'CANCELLED':
+        return 'destructive' // red
+      default:
+        return 'outline'
+    }
   }
 
   // We cast to unknown first because shippingAddress was typed that way in the Order interface in packages/shared/src/types/order.ts
@@ -112,10 +141,15 @@ export default function OrderDetailPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <Badge variant={STATUS_VARIANTS[order.status]} className="text-sm">
+          <Badge
+            variant={getStatusBadgeVariant(order.status)}
+            className="text-sm"
+          >
             {order.status}
           </Badge>
           <Button
+            size="sm"
+            variant="outline"
             onClick={() => setShowStatusDialog(true)}
             className="w-full sm:w-auto"
           >
@@ -500,7 +534,17 @@ export default function OrderDetailPage() {
         </CardContent>
       </Card>
 
-      {/* Dialogs will be added in next tasks */}
+      {/* Status Update Dialog */}
+      <StatusUpdateDialog
+        orderId={orderId}
+        currentStatus={order.status}
+        open={showStatusDialog}
+        onOpenChange={setShowStatusDialog}
+        onSuccess={() => {
+          // Dialog automatically refetches order data via tRPC cache invalidation
+          console.log('Order status updated successfully')
+        }}
+      />
     </div>
   )
 }
