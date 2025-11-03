@@ -41,3 +41,10 @@ export interface Address {
   postalCode: string;
   country: string;
 }
+
+export interface ShippingAddress {
+  street: string;
+  city: string;
+  state: string;
+  zip: string;
+}
