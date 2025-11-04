@@ -60,11 +60,16 @@ export function ShippingForm({ onSubmit, initialValues }: ShippingFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <div className="bg-gray-50 border rounded-lg p-6 text-gray-800">
-          <h2 className="text-xl font-semibold mb-6">Shipping Address</h2>
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="space-y-4 sm:space-y-6"
+      >
+        <div className="bg-gray-50 border rounded-lg p-4 sm:p-6 text-gray-800">
+          <h2 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6">
+            Shipping Address
+          </h2>
 
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             <FormField
               control={form.control}
               name="name"
@@ -74,9 +79,15 @@ export function ShippingForm({ onSubmit, initialValues }: ShippingFormProps) {
                 field: ControllerRenderProps<ShippingFormData, 'name'>
               }) => (
                 <FormItem>
-                  <FormLabel>Full Name</FormLabel>
+                  <FormLabel className="text-sm sm:text-base">
+                    Full Name
+                  </FormLabel>
                   <FormControl>
-                    <Input placeholder="John Doe" {...field} />
+                    <Input
+                      placeholder="John Doe"
+                      {...field}
+                      className="h-10 sm:h-11 text-sm sm:text-base"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -92,9 +103,15 @@ export function ShippingForm({ onSubmit, initialValues }: ShippingFormProps) {
                 field: ControllerRenderProps<ShippingFormData, 'address1'>
               }) => (
                 <FormItem>
-                  <FormLabel>Address Line 1</FormLabel>
+                  <FormLabel className="text-sm sm:text-base">
+                    Address Line 1
+                  </FormLabel>
                   <FormControl>
-                    <Input placeholder="123 Main St" {...field} />
+                    <Input
+                      placeholder="123 Main St"
+                      {...field}
+                      className="h-10 sm:h-11 text-sm sm:text-base"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -110,16 +127,22 @@ export function ShippingForm({ onSubmit, initialValues }: ShippingFormProps) {
                 field: ControllerRenderProps<ShippingFormData, 'address2'>
               }) => (
                 <FormItem>
-                  <FormLabel>Address Line 2 (Optional)</FormLabel>
+                  <FormLabel className="text-sm sm:text-base">
+                    Address Line 2 (Optional)
+                  </FormLabel>
                   <FormControl>
-                    <Input placeholder="Apt 4B" {...field} />
+                    <Input
+                      placeholder="Apt 4B"
+                      {...field}
+                      className="h-10 sm:h-11 text-sm sm:text-base"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <FormField
                 control={form.control}
                 name="city"
@@ -129,9 +152,13 @@ export function ShippingForm({ onSubmit, initialValues }: ShippingFormProps) {
                   field: ControllerRenderProps<ShippingFormData, 'city'>
                 }) => (
                   <FormItem>
-                    <FormLabel>City</FormLabel>
+                    <FormLabel className="text-sm sm:text-base">City</FormLabel>
                     <FormControl>
-                      <Input placeholder="San Francisco" {...field} />
+                      <Input
+                        placeholder="San Francisco"
+                        {...field}
+                        className="h-10 sm:h-11 text-sm sm:text-base"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -147,10 +174,12 @@ export function ShippingForm({ onSubmit, initialValues }: ShippingFormProps) {
                   field: ControllerRenderProps<ShippingFormData, 'state'>
                 }) => (
                   <FormItem>
-                    <FormLabel>State</FormLabel>
+                    <FormLabel className="text-sm sm:text-base">
+                      State
+                    </FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className="h-10 sm:h-11 text-sm sm:text-base">
                           <SelectValue placeholder="Select state" />
                         </SelectTrigger>
                       </FormControl>
@@ -168,7 +197,7 @@ export function ShippingForm({ onSubmit, initialValues }: ShippingFormProps) {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <FormField
                 control={form.control}
                 name="postalCode"
@@ -178,9 +207,15 @@ export function ShippingForm({ onSubmit, initialValues }: ShippingFormProps) {
                   field: ControllerRenderProps<ShippingFormData, 'postalCode'>
                 }) => (
                   <FormItem>
-                    <FormLabel>Postal Code</FormLabel>
+                    <FormLabel className="text-sm sm:text-base">
+                      Postal Code
+                    </FormLabel>
                     <FormControl>
-                      <Input placeholder="94102" {...field} />
+                      <Input
+                        placeholder="94102"
+                        {...field}
+                        className="h-10 sm:h-11 text-sm sm:text-base"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -196,10 +231,12 @@ export function ShippingForm({ onSubmit, initialValues }: ShippingFormProps) {
                   field: ControllerRenderProps<ShippingFormData, 'country'>
                 }) => (
                   <FormItem>
-                    <FormLabel>Country</FormLabel>
+                    <FormLabel className="text-sm sm:text-base">
+                      Country
+                    </FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className="h-10 sm:h-11 text-sm sm:text-base">
                           <SelectValue />
                         </SelectTrigger>
                       </FormControl>
@@ -219,7 +256,7 @@ export function ShippingForm({ onSubmit, initialValues }: ShippingFormProps) {
         <Button
           type="submit"
           size="lg"
-          className="w-full bg-gray-50 text-gray-700 hover:bg-gray-300"
+          className="w-full bg-gray-300 text-gray-700 h-11 sm:h-12 text-sm sm:text-base"
         >
           Continue to Payment
         </Button>

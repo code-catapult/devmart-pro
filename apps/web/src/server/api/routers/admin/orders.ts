@@ -10,6 +10,7 @@ import {
   orderAnalyticsSchema,
   updateOrderStatusSchema,
   addTrackingInfoSchema,
+  updateTrackingInfoSchema,
   processRefundSchema,
   bulkUpdateOrderStatusSchema,
 } from './schema'
@@ -112,5 +113,17 @@ export const ordersRouter = createTRPCRouter({
         input.status as OrderStatus,
         ctx.session.user.id
       )
+    }),
+
+  updateShippingTracking: adminProcedure
+    .input(updateTrackingInfoSchema)
+    .mutation(async ({ input, ctx }) => {
+      return await orderAdminService.updateShippingTracking({
+        orderId: input.orderId,
+        trackingNumber: input.trackingNumber,
+        shippingCarrier: input.shippingCarrier,
+        estimatedDelivery: input.estimatedDelivery,
+        adminUserId: ctx.session.user.id,
+      })
     }),
 })

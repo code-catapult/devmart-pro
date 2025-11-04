@@ -69,3 +69,5 @@ sku-migration-strategy.md
 BACKFILL-TROUBLESHOOTING.md
 diagnose-sku-issues.ts
 backfill-skus.ts
+state-machine-update.md
+SECURITY_PATTERNS.md

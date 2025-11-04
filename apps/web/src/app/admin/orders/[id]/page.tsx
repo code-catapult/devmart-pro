@@ -34,6 +34,7 @@ import {
 
 import { StatusUpdateDialog } from '~/components/admin/orders/StatusUpdateDialog'
 import { RefundDialog } from '~/components/admin/orders/RefundDialog'
+import { ShippingTrackingForm } from '~/components/admin/orders/ShippingTrackingForm'
 
 // Status badge variants (same as list page)
 const STATUS_VARIANTS: Record<
@@ -118,7 +119,7 @@ export default function OrderDetailPage() {
   const address = order.shippingAddress as unknown as ShippingAddress
 
   return (
-    <div className="container mx-auto py-8">
+    <div>
       {/* Header */}
       <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between text-muted-foreground">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
@@ -273,6 +274,7 @@ export default function OrderDetailPage() {
                       width={64}
                       height={64}
                       className="h-12 w-12 flex-shrink-0 rounded-md object-cover sm:h-16 sm:w-16"
+                      unoptimized
                     />
                   )}
                   <div className="min-w-0 flex-1">
@@ -546,6 +548,14 @@ export default function OrderDetailPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Shipping Tracking Form - NEW */}
+      <ShippingTrackingForm
+        orderId={orderId}
+        currentStatus={order.status}
+        existingTrackingNumber={order.trackingNumber}
+        existingShippingCarrier={order.shippingCarrier}
+      />
 
       {/* Status Update Dialog */}
       <StatusUpdateDialog

@@ -323,6 +323,74 @@ export class OrderAdminService {
   }
 
   /**
+   * Update existing shipping tracking information
+   * Allows updates for orders in PROCESSING or SHIPPED status
+   */
+  async updateShippingTracking(params: ShippingTrackingParams) {
+    const {
+      orderId,
+      trackingNumber,
+      shippingCarrier,
+      estimatedDelivery,
+      adminUserId,
+    } = params
+
+    // Fetch order
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: { user: true },
+    })
+
+    if (!order) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: `Order with ID ${orderId} not found`,
+      })
+    }
+
+    // Verify order has existing tracking
+    if (!order.trackingNumber) {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: `Order ${orderId} does not have tracking information to update. Use addTrackingInfo instead.`,
+      })
+    }
+
+    // Validate current status allows updating tracking (PROCESSING or SHIPPED)
+    if (!['PROCESSING', 'SHIPPED'].includes(order.status)) {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: `Cannot update tracking for order with status ${order.status}. Order must be PROCESSING or SHIPPED.`,
+      })
+    }
+
+    // Update order with new tracking info (don't change status)
+    const updatedOrder = await prisma.order.update({
+      where: { id: orderId },
+      data: {
+        trackingNumber,
+        shippingCarrier,
+        estimatedDelivery,
+        updatedAt: new Date(),
+      },
+      include: {
+        user: true,
+        orderItems: { include: { product: true } },
+      },
+    })
+
+    // Note: No email sent for updates, only for initial tracking
+    // Could optionally send an "updated tracking" email here
+
+    // Audit log
+    console.log(
+      `[AUDIT] Admin ${adminUserId} updated tracking for order ${orderId}: ${shippingCarrier} ${trackingNumber}`
+    )
+
+    return updatedOrder
+  }
+
+  /**
    * Get customer's order history with summary statistics
    */
   async getCustomerOrderHistory(userId: string, page: number, limit: number) {

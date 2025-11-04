@@ -65,12 +65,8 @@ export default async function ProductsPage({
       {/* Page Header */}
       <div className="flex items-center justify-between p-2">
         <div>
-          <h1 className="text-3xl text-gray-800 font-bold tracking-tight">
-            Products
-          </h1>
-          <p className="text-muted-foreground">
-            Manage your product catalog, inventory, and pricing
-          </p>
+          <h1 className="text-3xl font-bold tracking-tight">Products</h1>
+          <p>Manage your product catalog, inventory, and pricing</p>
         </div>
       </div>
 

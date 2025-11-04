@@ -443,7 +443,9 @@ export function ProductsTable({
               {/* Product SKU */}
               {product.sku && (
                 <div className="font-mono text-muted-foreground">
-                  <small>SKU: {product.sku}</small>
+                  <div className="text-xs flex flex-col">
+                    <span>SKU:</span> {product.sku}
+                  </div>
                 </div>
               )}
 

@@ -314,8 +314,16 @@ export const updateOrderStatusSchema = z.object({
   notes: z.string().optional(), // Admin can add notes for audit trail
 })
 
-// Add Tracking Info
+// Add Tracking Info (for orders in PROCESSING status)
 export const addTrackingInfoSchema = z.object({
+  orderId: z.cuid('Invalid order ID'),
+  trackingNumber: z.string().min(1, 'Tracking number is required'),
+  shippingCarrier: z.string().min(1, 'Carrier is required'),
+  estimatedDelivery: z.date().optional(),
+})
+
+// Update Tracking Info (for orders in PROCESSING or SHIPPED status)
+export const updateTrackingInfoSchema = z.object({
   orderId: z.cuid('Invalid order ID'),
   trackingNumber: z.string().min(1, 'Tracking number is required'),
   shippingCarrier: z.string().min(1, 'Carrier is required'),
