@@ -393,11 +393,16 @@ export class OrderAdminService {
   /**
    * Get customer's order history with summary statistics
    */
-  async getCustomerOrderHistory(userId: string, page: number, limit: number) {
-    const where = { userId }
+  async getCustomerOrderHistory(
+    userId: string,
+    page: number,
+    limit: number,
+    status?: OrderStatus
+  ) {
+    const where = { userId, ...(status && { status }) }
 
     // Parallel queries for stats and orders
-    const [totalOrders, orders, orderStats] = await Promise.all([
+    const [total, orders] = await Promise.all([
       prisma.order.count({ where }),
       prisma.order.findMany({
         where,
@@ -418,15 +423,10 @@ export class OrderAdminService {
     return {
       orders,
       pagination: {
-        total: totalOrders,
+        total,
         page,
         limit,
-        totalPages: Math.ceil(totalOrders / limit),
-      },
-      stats: {
-        totalOrders,
-        totalSpent: orderStats._sum.total || 0,
-        averageOrderValue: orderStats._avg.total || 0,
+        totalPages: Math.ceil(total / limit),
       },
     }
   }

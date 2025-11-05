@@ -3,6 +3,7 @@ import { productsRouter } from './products'
 import { categoriesRouter } from './categories'
 import { dashboardRouter } from './dashboard'
 import { ordersRouter } from './orders'
+import { customersRouter } from './customers'
 
 /**
  * Admin Router
@@ -15,4 +16,5 @@ export const adminRouter = createTRPCRouter({
   products: productsRouter,
   categories: categoriesRouter,
   orders: ordersRouter,
+  customers: customersRouter,
 })

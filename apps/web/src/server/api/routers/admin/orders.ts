@@ -6,7 +6,6 @@ import type { OrderStatus } from '@prisma/client'
 import {
   orderListSchema,
   orderIdSchema,
-  customerOrdersSchema,
   orderAnalyticsSchema,
   updateOrderStatusSchema,
   addTrackingInfoSchema,
@@ -47,16 +46,6 @@ export const ordersRouter = createTRPCRouter({
   getOrderById: adminProcedure.input(orderIdSchema).query(async ({ input }) => {
     return await orderAdminService.getOrderDetails(input.id)
   }),
-
-  getCustomerOrders: adminProcedure
-    .input(customerOrdersSchema)
-    .query(async ({ input }) => {
-      return await orderAdminService.getCustomerOrderHistory(
-        input.userId,
-        input.page,
-        input.limit
-      )
-    }),
 
   getOrderAnalytics: adminProcedure
     .input(orderAnalyticsSchema)

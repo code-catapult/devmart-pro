@@ -296,6 +296,7 @@ export const orderIdSchema = z.object({
 // Customer Orders Query
 export const customerOrdersSchema = z.object({
   userId: z.cuid('Invalid user ID'),
+  status: orderStatusSchema.optional(), // Optional status filter
   page: z.number().min(1).default(1),
   limit: z.number().min(1).max(50).default(10), // Smaller limit for customer history
 })
@@ -342,4 +343,31 @@ export const processRefundSchema = z.object({
 export const bulkUpdateOrderStatusSchema = z.object({
   orderIds: z.array(z.cuid()).min(1, 'At least one order required'),
   status: z.enum(['PROCESSING', 'SHIPPED', 'CANCELLED']), // Only allow safe bulk transitions
+})
+
+// Customer Order Stats
+export const getCustomerOrderStatsSchema = z.object({
+  customerId: z.cuid(),
+})
+
+/**
+ * Customer Management Schemas
+ *
+ * ✨ ENHANCEMENTS:
+ * - Customer list with search and pagination
+ * - Reusable customer ID validation
+ */
+
+// Customer List Query
+export const customerListSchema = z.object({
+  search: z.string().optional(), // Search by name or email
+  page: z.number().min(1).default(1),
+  limit: z.number().min(1).max(100).default(20),
+  sortBy: z.enum(['name', 'email', 'createdAt']).default('createdAt'),
+  sortOrder: z.enum(['asc', 'desc']).default('desc'),
+})
+
+// Single Customer Fetch
+export const customerIdSchema = z.object({
+  id: z.cuid('Invalid customer ID'),
 })
