@@ -71,3 +71,4 @@ diagnose-sku-issues.ts
 backfill-skus.ts
 state-machine-update.md
 SECURITY_PATTERNS.md
+MAINTAINABLE-DESIGN-PATTERNS.md
