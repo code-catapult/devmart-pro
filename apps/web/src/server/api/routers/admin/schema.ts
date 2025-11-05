@@ -350,6 +350,17 @@ export const getCustomerOrderStatsSchema = z.object({
   customerId: z.cuid(),
 })
 
+// Order notes Schemas
+export const addOrderNoteSchema = z.object({
+  orderId: z.string(),
+  content: z.string().min(1).max(5000),
+  isInternal: z.boolean().default(true),
+})
+
+export const getOrderNotesSchema = z.object({
+  orderId: z.string(),
+})
+
 /**
  * Customer Management Schemas
  *

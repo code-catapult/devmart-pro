@@ -179,7 +179,7 @@ export function ShippingTrackingForm({
   }
 
   return (
-    <Card>
+    <Card className="flex-1">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Package className="h-5 w-5" />

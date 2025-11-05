@@ -612,4 +612,73 @@ export class OrderAdminService {
       `,
     })
   }
+
+  /**
+   * Get all notes for an order
+   */
+  async getOrderNotes(orderId: string) {
+    const notes = await prisma.orderNote.findMany({
+      where: { orderId },
+      orderBy: { createdAt: 'asc' }, // Chronological order
+      include: {
+        admin: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    })
+
+    return notes
+  }
+
+  /**
+   * Add a note to an order
+   */
+  async addOrderNote(
+    orderId: string,
+    adminId: string,
+    content: string,
+    isInternal: boolean = true
+  ) {
+    // Verify order exists
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+    })
+
+    if (!order) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Order not found',
+      })
+    }
+
+    // Create note with current admin user
+    const note = await prisma.orderNote.create({
+      data: {
+        orderId,
+        adminId,
+        content,
+        isInternal,
+      },
+      include: {
+        admin: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    })
+
+    // Optional: If customer-visible, send email notification
+    if (!isInternal) {
+      // TODO: await emailService.sendOrderUpdateToCustomer(order, note);
+    }
+
+    return note
+  }
 }

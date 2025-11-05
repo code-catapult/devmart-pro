@@ -54,6 +54,7 @@ model User {
   orders    Order[]
   cartItems CartItem[]
   reviews   Review[]
+  adminNotes  OrderNote[]
 
   @@map("users")
 }
@@ -132,6 +133,22 @@ model Product {
   @@map("products")
 }
 
+model OrderNote {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  adminId   String
+  admin     User     @relation(fields: [adminId], references: [id])
+  content   String   @db.Text
+  isInternal Boolean @default(true) // true = internal note, false = customer-visible
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([orderId])
+  @@index([adminId])
+  @@index([createdAt])
+}
+
 // Order model for purchase tracking
 model Order {
   id            String      @id @default(cuid())
@@ -163,12 +180,14 @@ model Order {
   // Relationships
   user       User        @relation(fields: [userId], references: [id])
   orderItems OrderItem[]
+  notes     OrderNote[]
 
   @@index([userId])
   @@index([status])
   @@index([orderNumber])
   @@map("orders")
 }
+
 
 // Order items for tracking products in orders
 model OrderItem {

@@ -12,6 +12,8 @@ import {
   updateTrackingInfoSchema,
   processRefundSchema,
   bulkUpdateOrderStatusSchema,
+  getOrderNotesSchema,
+  addOrderNoteSchema,
 } from './schema'
 
 // Instantiate services
@@ -57,7 +59,24 @@ export const ordersRouter = createTRPCRouter({
       })
     }),
 
+  getOrderNotes: adminProcedure
+    .input(getOrderNotesSchema)
+    .query(async ({ input }) => {
+      return await orderAdminService.getOrderNotes(input.orderId)
+    }),
+
   // ==================== ORDER MANAGEMENT MUTATIONS ====================
+
+  addOrderNote: adminProcedure
+    .input(addOrderNoteSchema)
+    .mutation(async ({ input, ctx }) => {
+      return await orderAdminService.addOrderNote(
+        input.orderId,
+        ctx.session.user.id, // Current logged-in admin
+        input.content,
+        input.isInternal
+      )
+    }),
 
   updateOrderStatus: adminProcedure
     .input(updateOrderStatusSchema)

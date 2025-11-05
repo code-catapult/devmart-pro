@@ -27,3 +27,4 @@ export * from "./components/Textarea";
 export * from "./components/RadioGroup";
 export * from "./components/Checkbox";
 export * from "./components/Tooltip";
+export * from "./components/Switch";
