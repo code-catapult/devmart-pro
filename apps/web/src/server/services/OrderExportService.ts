@@ -1,11 +1,14 @@
 import { prisma } from '~/lib/prisma'
+import { formatCurrency, formatDateTime } from '@repo/shared/utils'
 import { type Prisma, type OrderStatus } from '@prisma/client'
+import { ShippingAddress } from '@repo/shared/types'
 
 export interface ExportFilters {
-  status?: OrderStatus
+  status?: OrderStatus | 'ALL'
   startDate?: Date
   endDate?: Date
   search?: string
+  cursor?: string
 }
 
 // Full order with relations for export
@@ -60,7 +63,7 @@ export class OrderExportService {
 
       // Yield each order as CSV row
       for (const order of orders) {
-        yield this.formatOrderAsCSVRow(order) + '\n'
+        yield this.formatOrderAsCSV(order) + '\n'
       }
     }
   }
@@ -92,10 +95,49 @@ export class OrderExportService {
     // Build CSV string
     const rows = [this.getCSVHeader()]
     orders.forEach((order) => {
-      rows.push(this.formatOrderAsCSVRow(order))
+      rows.push(this.formatOrderAsCSV(order))
     })
 
     return rows.join('\n')
+  }
+
+  async getOrdersForExport(filters: ExportFilters) {
+    const { status, startDate, endDate, search, cursor } = filters
+
+    const where: Prisma.OrderWhereInput = {
+      ...(status && status !== 'ALL' && { status: status as OrderStatus }),
+      ...(startDate && { createdAt: { gte: startDate } }),
+      ...(endDate && { createdAt: { lte: endDate } }),
+      ...(search && {
+        OR: [
+          { orderNumber: { contains: search, mode: 'insensitive' } },
+          { user: { name: { contains: search, mode: 'insensitive' } } },
+          { user: { email: { contains: search, mode: 'insensitive' } } },
+        ],
+      }),
+    }
+
+    // Fetch batch of orders (100 at a time for streaming)
+    const orders = await prisma.order.findMany({
+      where,
+      take: 100, // Batch size
+      ...(cursor && { cursor: { id: cursor }, skip: 1 }), // Resume from cursor
+      orderBy: { createdAt: 'desc' },
+      include: {
+        user: {
+          select: { id: true, name: true, email: true },
+        },
+        orderItems: {
+          include: {
+            product: {
+              select: { name: true, sku: true },
+            },
+          },
+        },
+      },
+    })
+
+    return orders
   }
 
   /**
@@ -104,8 +146,8 @@ export class OrderExportService {
   private buildWhereClause(filters: ExportFilters): Prisma.OrderWhereInput {
     const where: Prisma.OrderWhereInput = {}
 
-    if (filters.status) {
-      where.status = filters.status
+    if (filters.status && filters.status !== 'ALL') {
+      where.status = filters.status as OrderStatus
     }
 
     if (filters.startDate || filters.endDate) {
@@ -132,10 +174,27 @@ export class OrderExportService {
   }
 
   /**
+   * Escape CSV field - wrap in quotes if contains comma, quote, or newline
+   */
+  private escapeCSVField(field: string | number | null | undefined): string {
+    if (field === null || field === undefined) return ''
+
+    const str = String(field)
+
+    // If field contains comma, quote, or newline → wrap in quotes and escape internal quotes
+    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+      // Replace " with "" (CSV escape for quotes)
+      return `"${str.replace(/"/g, '""')}"`
+    }
+
+    return str
+  }
+
+  /**
    * Get CSV header row
    */
   private getCSVHeader(): string {
-    return [
+    const headers = [
       'Order Number',
       'Order Date',
       'Status',
@@ -151,57 +210,111 @@ export class OrderExportService {
       'Payment Intent ID',
       'Tracking Number',
       'Shipping Carrier',
+      'Shipping Address',
       'Refund Amount',
       'Refund Reason',
-    ].join(',')
+    ]
+
+    return headers.map((h) => this.escapeCSVField(h)).join(',') + '\n'
   }
 
   /**
    * Format single order as CSV row
    */
-  private formatOrderAsCSVRow(order: OrderWithRelations): string {
-    // Calculate totals
-    const itemsCount = order.orderItems.length
+
+  formatOrderAsCSV(order: OrderWithRelations): string {
+    const {
+      orderNumber,
+      createdAt,
+      user,
+      orderItems,
+      subtotal,
+      tax,
+      shipping,
+      total,
+      status,
+      trackingNumber,
+      shippingCarrier,
+      shippingAddress,
+      stripePaymentIntentId,
+      refundAmount,
+      refundReason,
+    } = order
 
     // Format item details (product name x quantity)
-    const itemDetails = order.orderItems
+    const itemDetails = orderItems
       .map((item) => `${item.product.name} x${item.quantity}`)
       .join('; ')
 
     // Product SKUs
-    const productSKUs = order.orderItems
+    const productSKUs = orderItems
       .map((item) => item.product.sku || 'N/A')
       .join('; ')
 
-    // Escape CSV values (handle commas and quotes)
-    const escape = (value: unknown): string => {
-      if (value === null || value === undefined) return ''
-      const str = String(value)
-      // If contains comma, quote, or newline, wrap in quotes and escape existing quotes
-      if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-        return `"${str.replace(/"/g, '""')}"`
-      }
-      return str
-    }
+    // Format shipping address as single line
+    const addressLine = shippingAddress
+      ? (() => {
+          const addr = shippingAddress as unknown as ShippingAddress
+          return `${addr.address1}, ${addr.city}, ${addr.state} ${addr.postalCode}`
+        })()
+      : ''
 
-    return [
-      escape(order.orderNumber),
-      escape(order.createdAt.toISOString().split('T')[0]), // Date only
-      escape(order.status),
-      escape(order.user.name || ''),
-      escape(order.user.email),
-      escape(itemsCount),
-      escape(itemDetails),
-      escape(productSKUs),
-      escape((order.subtotal / 100).toFixed(2)), // Convert cents to dollars
-      escape((order.shipping / 100).toFixed(2)),
-      escape((order.tax / 100).toFixed(2)),
-      escape((order.total / 100).toFixed(2)),
-      escape(order.stripePaymentIntentId || ''),
-      escape(order.trackingNumber || ''),
-      escape(order.shippingCarrier || ''),
-      escape(order.refundAmount ? (order.refundAmount / 100).toFixed(2) : ''),
-      escape(order.refundReason || ''),
-    ].join(',')
+    const fields = [
+      orderNumber,
+      formatDateTime(createdAt),
+      status,
+      user.name || '',
+      user.email,
+      orderItems.length.toString(),
+      itemDetails,
+      productSKUs,
+      formatCurrency(subtotal),
+      formatCurrency(shipping),
+      formatCurrency(tax),
+      formatCurrency(total),
+      stripePaymentIntentId || '',
+      trackingNumber || '',
+      shippingCarrier || '',
+      addressLine,
+      refundAmount ? formatCurrency(refundAmount) : '',
+      refundReason || '',
+    ]
+
+    return fields.map((f) => this.escapeCSVField(f)).join(',') + '\n'
+  }
+
+  async *generateCSV(filters: ExportFilters): AsyncGenerator<string> {
+    // Yield header first
+    yield this.getCSVHeader()
+
+    let cursor: string | undefined = undefined
+    let hasMore = true
+
+    // Stream batches until no more data
+    while (hasMore) {
+      const orders = await this.getOrdersForExport({
+        ...filters,
+        cursor,
+      })
+
+      // No more orders → stop
+      if (orders.length === 0) {
+        hasMore = false
+        break
+      }
+
+      // Yield each order as CSV row
+      for (const order of orders) {
+        yield this.formatOrderAsCSV(order)
+      }
+
+      // Set cursor to last order's ID for next batch
+      cursor = orders[orders.length - 1].id
+
+      // If we got less than batch size → we're done
+      if (orders.length < 100) {
+        hasMore = false
+      }
+    }
   }
 }

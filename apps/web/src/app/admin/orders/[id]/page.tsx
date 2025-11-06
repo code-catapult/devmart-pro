@@ -206,9 +206,9 @@ export default function OrderDetailPage() {
                 <div>
                   <p className="text-sm font-medium">Shipping Address</p>
                   <p className="text-sm text-gray-600">
-                    {address.street}
+                    {address.address1}
                     <br />
-                    {address.city}, {address.state} {address.zip}
+                    {address.city}, {address.state} {address.postalCode}
                   </p>
                 </div>
               </div>

@@ -43,8 +43,10 @@ export interface Address {
 }
 
 export interface ShippingAddress {
-  street: string;
+  address1: string;
+  address2?: string;
   city: string;
   state: string;
-  zip: string;
+  postalCode: string;
+  country: string;
 }

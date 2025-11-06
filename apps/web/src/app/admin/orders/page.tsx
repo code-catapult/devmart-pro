@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { api } from '~/utils/api'
 import { formatCurrency, formatDate } from '@repo/shared/utils'
 import { OrderStatus } from '@repo/shared/types'
+import { toast } from 'sonner'
 import {
   Badge,
   Button,
@@ -44,6 +45,7 @@ import {
   XCircle,
   ChevronDown,
   ArrowLeft,
+  Loader2,
 } from 'lucide-react'
 import { Route } from 'next'
 import Link from 'next/link'
@@ -80,6 +82,8 @@ export default function OrdersPage() {
   const [selectedOrderId, setSelectedOrderId] = useState<string>('')
   const [newStatus, setNewStatus] = useState<OrderStatus>('PENDING')
   const [statusNotes, setStatusNotes] = useState('')
+
+  const [isExporting, setIsExporting] = useState(false)
 
   // Fetch orders with filters
   const {
@@ -176,14 +180,47 @@ export default function OrdersPage() {
     }
   }
 
-  const handleExport = () => {
-    // Build query params for export
-    const params = new URLSearchParams()
-    if (status !== 'ALL') params.set('status', status)
-    if (search) params.set('search', search)
+  //   // Open export URL in new window
+  //   window.open(`/api/admin/orders/export?${params.toString()}`, '_blank')
+  // }
 
-    // Open export URL in new window
-    window.open(`/api/admin/orders/export?${params.toString()}`, '_blank')
+  const handleExport = async () => {
+    try {
+      setIsExporting(true)
+
+      // Build query string from current filters for export
+      const params = new URLSearchParams()
+
+      if (status && status !== 'ALL') {
+        params.set('status', status)
+      }
+      if (search) {
+        params.set('search', search)
+      }
+
+      // Trigger download
+      const url = `/api/admin/orders/export?${params.toString()}`
+
+      // Open in new window to trigger download
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `orders-export-${
+        new Date().toISOString().split('T')[0]
+      }.csv`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+
+      toast.success('Export started - Your download will begin shortly.')
+
+      // Keep spinner visible for at least 1 second to show feedback
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+    } catch (error) {
+      console.error('Export error:', error)
+      toast.error('Failed to export orders. Please try again.')
+    } finally {
+      setIsExporting(false)
+    }
   }
 
   const handleSort = (column: typeof sortBy) => {
@@ -294,12 +331,25 @@ export default function OrdersPage() {
               </DropdownMenuContent>
             </DropdownMenu>
           )}
-
           {/* Export Button */}
-          <Button variant="outline" onClick={handleExport}>
-            <Download className="mr-2 h-4 w-4" />
-            Export CSV
+          <Button
+            variant="outline"
+            onClick={handleExport}
+            disabled={isExporting}
+          >
+            {isExporting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Exporting...
+              </>
+            ) : (
+              <>
+                <Download className="mr-2 h-4 w-4" />
+                Export CSV
+              </>
+            )}
           </Button>
+          ;
         </div>
       </div>
 
