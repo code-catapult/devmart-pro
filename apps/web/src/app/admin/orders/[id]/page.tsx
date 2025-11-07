@@ -27,15 +27,14 @@ import {
   User,
   Mail,
   Truck,
-  Calendar,
   DollarSign,
-  AlertCircle,
 } from 'lucide-react'
 
 import { StatusUpdateDialog } from '~/components/admin/orders/StatusUpdateDialog'
 import { RefundDialog } from '~/components/admin/orders/RefundDialog'
 import { ShippingTrackingForm } from '~/components/admin/orders/ShippingTrackingForm'
 import { OrderNotes } from '~/components/admin/orders/OrderNotes'
+import { OrderTimeline } from '~/components/admin/orders/OrderTimeline'
 
 // Status badge variants (same as list page)
 const STATUS_VARIANTS: Record<
@@ -66,6 +65,20 @@ export default function OrderDetailPage() {
   } = api.admin.orders.getOrderById.useQuery({
     id: orderId,
   })
+
+  // Fetch order timeline
+  const {
+    data: timelineEvents = [],
+    isLoading: isLoadingTimeline,
+    error: timelineError,
+  } = api.admin.orders.getOrderTimeline.useQuery({
+    orderId,
+  })
+
+  // Debug: Log timeline data
+  console.log('Timeline events:', timelineEvents)
+  console.log('Timeline loading:', isLoadingTimeline)
+  console.log('Timeline error:', timelineError)
 
   // Loading state
   if (isLoading) {
@@ -455,107 +468,9 @@ export default function OrderDetailPage() {
       {/* Order Timeline & Shipment Tracking */}
       <div className="mt-6 grid gap-6 md:grid-cols-2">
         {/* Order Timeline */}
-        <Card className="flex-1">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
-              Order Timeline
-            </CardTitle>
-            <CardDescription>History of order status changes</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {/* Timeline entries (simplified - in production, track actual status change history) */}
-              <div className="flex gap-4">
-                <div className="flex flex-col items-center">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100">
-                    <Package className="h-5 w-5 text-green-600" />
-                  </div>
-                  <div className="h-full w-px bg-gray-200" />
-                </div>
-                <div className="pb-8">
-                  <p className="font-medium">Order Placed</p>
-                  <p className="text-sm text-gray-500">
-                    {formatDateTime(order.createdAt)}
-                  </p>
-                </div>
-              </div>
+        <OrderTimeline events={timelineEvents} />
 
-              {order.status !== 'PENDING' && (
-                <div className="flex gap-4">
-                  <div className="flex flex-col items-center">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100">
-                      <CreditCard className="h-5 w-5 text-blue-600" />
-                    </div>
-                    {order.status !== 'PROCESSING' && (
-                      <div className="h-full w-px bg-gray-200" />
-                    )}
-                  </div>
-                  <div className="pb-8">
-                    <p className="font-medium">Payment Confirmed</p>
-                    <p className="text-sm text-gray-500">
-                      {formatDateTime(order.createdAt)}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {(order.status === 'SHIPPED' || order.status === 'DELIVERED') && (
-                <div className="flex gap-4">
-                  <div className="flex flex-col items-center">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-100">
-                      <Truck className="h-5 w-5 text-orange-600" />
-                    </div>
-                    {order.status !== 'SHIPPED' && (
-                      <div className="h-full w-px bg-gray-200" />
-                    )}
-                  </div>
-                  <div className="pb-8">
-                    <p className="font-medium">Shipped</p>
-                    <p className="text-sm text-gray-500">
-                      {order.trackingNumber &&
-                        `Tracking: ${order.trackingNumber}`}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {order.status === 'DELIVERED' && (
-                <div className="flex gap-4">
-                  <div className="flex flex-col items-center">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100">
-                      <Package className="h-5 w-5 text-green-600" />
-                    </div>
-                  </div>
-                  <div>
-                    <p className="font-medium">Delivered</p>
-                    <p className="text-sm text-gray-500">
-                      {formatDateTime(order.updatedAt)}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {order.status === 'CANCELLED' && (
-                <div className="flex gap-4">
-                  <div className="flex flex-col items-center">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100">
-                      <AlertCircle className="h-5 w-5 text-red-600" />
-                    </div>
-                  </div>
-                  <div>
-                    <p className="font-medium">Cancelled</p>
-                    <p className="text-sm text-gray-500">
-                      {formatDateTime(order.updatedAt)}
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Shipping Tracking Form - NEW */}
+        {/* Shipping Tracking Form */}
         <ShippingTrackingForm
           orderId={orderId}
           currentStatus={order.status}

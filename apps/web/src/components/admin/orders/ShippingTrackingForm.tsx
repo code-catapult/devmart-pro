@@ -97,6 +97,7 @@ export function ShippingTrackingForm({
     onSuccess: () => {
       // Invalidate queries to refetch updated data
       void utils.admin.orders.getOrderById.invalidate({ id: orderId })
+      void utils.admin.orders.getOrderTimeline.invalidate({ orderId })
       void utils.admin.orders.getOrders.invalidate()
 
       // Exit edit mode
@@ -110,6 +111,7 @@ export function ShippingTrackingForm({
       onSuccess: () => {
         // Invalidate queries to refetch updated data
         void utils.admin.orders.getOrderById.invalidate({ id: orderId })
+        void utils.admin.orders.getOrderTimeline.invalidate({ orderId })
         void utils.admin.orders.getOrders.invalidate()
 
         // Exit edit mode

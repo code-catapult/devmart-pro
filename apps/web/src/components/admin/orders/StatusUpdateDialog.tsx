@@ -106,6 +106,7 @@ export function StatusUpdateDialog({
     // Always refetch after error or success to ensure data consistency
     onSettled: () => {
       void utils.admin.orders.getOrderById.invalidate({ id: orderId })
+      void utils.admin.orders.getOrderTimeline.invalidate({ orderId })
       void utils.admin.orders.getOrders.invalidate()
       void utils.admin.dashboard.getDashboardMetrics.invalidate()
       void utils.admin.dashboard.getRecentOrders.invalidate()

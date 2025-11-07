@@ -3,6 +3,7 @@ import { TRPCError } from '@trpc/server'
 import { OrderStatus, type Prisma } from '@prisma/client'
 import { EmailService } from '~/server/services/EmailService' // From Story 2.4
 import { invalidateCacheKey, invalidateCache } from '~/lib/cache'
+import { formatCurrency } from '@repo/shared/utils'
 
 // Valid status transitions (state machine)
 const VALID_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
@@ -48,6 +49,27 @@ interface ShippingTrackingParams {
   shippingCarrier: string
   estimatedDelivery?: Date
   adminUserId: string
+}
+
+type EventType =
+  | 'ORDER_CREATED'
+  | 'PAYMENT_CONFIRMED'
+  | 'STATUS_CHANGED'
+  | 'TRACKING_ADDED'
+  | 'REFUND_PROCESSED'
+  | 'NOTE_ADDED'
+
+interface TimelineEvent {
+  id: string
+  type: EventType
+  timestamp: Date
+  title: string
+  description?: string
+  user?: {
+    name: string | null
+    email: string
+  }
+  metadata?: Record<string, unknown>
 }
 
 export class OrderAdminService {
@@ -186,12 +208,20 @@ export class OrderAdminService {
       })
     }
 
-    // 3. Update order in database
+    // 3. Update order in database and create status change record
     const updatedOrder = await prisma.order.update({
       where: { id: orderId },
       data: {
         status: newStatus,
         updatedAt: new Date(),
+        statusHistory: {
+          create: {
+            previousStatus: order.status,
+            newStatus: newStatus,
+            changedBy: adminUserId,
+            notes: notes,
+          },
+        },
       },
       include: {
         user: true,
@@ -302,6 +332,14 @@ export class OrderAdminService {
         estimatedDelivery,
         status: OrderStatus.SHIPPED,
         updatedAt: new Date(),
+        statusHistory: {
+          create: {
+            previousStatus: order.status,
+            newStatus: OrderStatus.SHIPPED,
+            changedBy: adminUserId,
+            notes: `Tracking added: ${shippingCarrier} ${trackingNumber}`,
+          },
+        },
       },
       include: {
         user: true,
@@ -472,19 +510,28 @@ export class OrderAdminService {
 
     // Update all orders in a transaction (all-or-nothing)
     const updatedOrders = await prisma.$transaction(
-      orderIds.map((orderId) =>
-        prisma.order.update({
+      orderIds.map((orderId) => {
+        const order = orders.find((o) => o.id === orderId)!
+        return prisma.order.update({
           where: { id: orderId },
           data: {
             status: newStatus,
             updatedAt: new Date(),
+            statusHistory: {
+              create: {
+                previousStatus: order.status,
+                newStatus: newStatus,
+                changedBy: adminUserId,
+                notes: 'Bulk status update',
+              },
+            },
           },
           include: {
             user: true,
             orderItems: { include: { product: true } },
           },
         })
-      )
+      })
     )
 
     // Send email notifications for all orders (async)
@@ -680,5 +727,153 @@ export class OrderAdminService {
     }
 
     return note
+  }
+
+  /**
+   * Get order timeline with all events (status changes, notes, tracking, refunds)
+   */
+  async getOrderTimeline(orderId: string): Promise<TimelineEvent[]> {
+    // Fetch order with all related data
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        statusHistory: {
+          orderBy: { createdAt: 'asc' },
+          include: {
+            changedByUser: {
+              select: { name: true, email: true },
+            },
+          },
+        },
+        notes: {
+          orderBy: { createdAt: 'asc' },
+          include: {
+            admin: {
+              select: { name: true, email: true },
+            },
+          },
+        },
+      },
+    })
+
+    if (!order) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Order not found',
+      })
+    }
+
+    // Build timeline events from multiple sources
+    const events: TimelineEvent[] = []
+
+    // 1. Order created event
+    events.push({
+      id: `order-created-${order.id}`,
+      type: 'ORDER_CREATED',
+      timestamp: order.createdAt,
+      title: 'Order Created',
+      description: `Order #${order.orderNumber} placed`,
+    })
+
+    // 2. Payment confirmed event (if paid)
+    if (order.stripePaymentIntentId) {
+      events.push({
+        id: `payment-confirmed-${order.id}`,
+        type: 'PAYMENT_CONFIRMED',
+        timestamp: order.createdAt,
+        title: 'Payment Confirmed',
+        description: `Payment of ${formatCurrency(order.total)} received`,
+        metadata: {
+          amount: formatCurrency(order.total),
+          method: 'Credit Card',
+        },
+      })
+    }
+
+    // 3. Status change events
+    for (const change of order.statusHistory) {
+      const previousStatusText = change.previousStatus
+        ? this.formatStatus(change.previousStatus)
+        : 'None'
+      const newStatusText = this.formatStatus(change.newStatus)
+
+      events.push({
+        id: change.id,
+        type: 'STATUS_CHANGED',
+        timestamp: change.createdAt,
+        title: `Status Updated`,
+        description: `${previousStatusText} → ${newStatusText}`,
+        user: change.changedByUser || undefined,
+        metadata: {
+          ...(change.notes ? { notes: change.notes } : {}),
+          newStatus: change.newStatus,
+        },
+      })
+    }
+
+    // 4. Tracking added event (if tracking exists)
+    if (order.trackingNumber && order.shippingCarrier) {
+      const trackingAddedAt =
+        order.statusHistory.find((h) => h.newStatus === 'SHIPPED')?.createdAt ||
+        order.updatedAt
+
+      events.push({
+        id: `tracking-added-${order.id}`,
+        type: 'TRACKING_ADDED',
+        timestamp: trackingAddedAt,
+        title: 'Tracking Information Added',
+        description: `Shipment is on its way`,
+        metadata: {
+          carrier: order.shippingCarrier,
+          tracking: order.trackingNumber,
+        },
+      })
+    }
+
+    // 5. Refund events (if refunded)
+    if (order.refundAmount && order.refundAmount > 0) {
+      events.push({
+        id: `refund-processed-${order.id}`,
+        type: 'REFUND_PROCESSED',
+        timestamp: order.refundedAt || order.updatedAt,
+        title: 'Refund Processed',
+        description: `Refund of ${formatCurrency(order.refundAmount)} issued`,
+        metadata: {
+          amount: formatCurrency(order.refundAmount),
+          reason: order.refundReason || 'Not specified',
+        },
+      })
+    }
+
+    // 6. Note events
+    for (const note of order.notes) {
+      events.push({
+        id: note.id,
+        type: 'NOTE_ADDED',
+        timestamp: note.createdAt,
+        title: note.isInternal ? 'Internal Note Added' : 'Note Added',
+        description:
+          note.content.substring(0, 100) +
+          (note.content.length > 100 ? '...' : ''),
+        user: note.admin,
+      })
+    }
+
+    // Sort all events chronologically
+    return events.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
+  }
+
+  /**
+   * Format order status for display
+   */
+  private formatStatus(status: OrderStatus): string {
+    const statusMap: Record<OrderStatus, string> = {
+      PENDING: 'Pending',
+      PROCESSING: 'Processing',
+      SHIPPED: 'Shipped',
+      DELIVERED: 'Delivered',
+      CANCELLED: 'Cancelled',
+    }
+    return statusMap[status] || status
   }
 }

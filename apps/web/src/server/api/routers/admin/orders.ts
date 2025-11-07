@@ -2,7 +2,8 @@ import { createTRPCRouter, adminProcedure } from '~/server/api/trpc'
 import { OrderAdminService } from '~/server/services/OrderAdminService'
 import { RefundService } from '~/server/services/RefundService'
 import { OrderAnalyticsService } from '~/server/services/OrderAnalyticsService'
-import type { OrderStatus } from '@prisma/client'
+import type { OrderStatus } from '@repo/shared/types'
+import { z } from 'zod'
 import {
   orderListSchema,
   orderIdSchema,
@@ -63,6 +64,12 @@ export const ordersRouter = createTRPCRouter({
     .input(getOrderNotesSchema)
     .query(async ({ input }) => {
       return await orderAdminService.getOrderNotes(input.orderId)
+    }),
+
+  getOrderTimeline: adminProcedure
+    .input(z.object({ orderId: z.string() }))
+    .query(async ({ input }) => {
+      return await orderAdminService.getOrderTimeline(input.orderId)
     }),
 
   // ==================== ORDER MANAGEMENT MUTATIONS ====================

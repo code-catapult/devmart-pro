@@ -72,3 +72,5 @@ backfill-skus.ts
 state-machine-update.md
 SECURITY_PATTERNS.md
 MAINTAINABLE-DESIGN-PATTERNS.md
+api-service-techniques.md
+task-driven-development.md
