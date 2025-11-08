@@ -57,6 +57,8 @@ model User {
   adminNotes         OrderNote[]
   orderStatusChanges OrderStatusChange[] @relation("AdminStatusChanges")
 
+  @@index([email]) // Fast email search
+  @@index([name]) // Fast name search (if supported by DB)
   @@map("users")
 }
 
@@ -199,9 +201,10 @@ model Order {
   notes         OrderNote[]
   statusHistory OrderStatusChange[]
 
-  @@index([userId])
-  @@index([status])
-  @@index([orderNumber])
+  @@index([userId]) // Faster user lookup
+  @@index([status]) // Faster status filter
+  @@index([orderNumber]) // Faster order number lookup
+  @@index([createdAt]) // Faster date sorting
   @@map("orders")
 }
 

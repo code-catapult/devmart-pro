@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { api } from '~/utils/api'
 import { formatCurrency, formatDate } from '@repo/shared/utils'
 import { OrderStatus } from '@repo/shared/types'
@@ -10,7 +10,6 @@ import {
   Badge,
   Button,
   Checkbox,
-  Input,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -44,11 +43,13 @@ import {
   PackageCheck,
   XCircle,
   ChevronDown,
-  ArrowLeft,
   Loader2,
+  X,
+  ArrowLeft,
 } from 'lucide-react'
 import { Route } from 'next'
 import Link from 'next/link'
+import { OrderSearch } from '~/components/admin/orders/OrderSearch'
 
 // Status badge variants
 const STATUS_VARIANTS: Record<
@@ -64,13 +65,16 @@ const STATUS_VARIANTS: Record<
 
 export default function OrdersPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const utils = api.useUtils()
+
+  // Get search params from URL (persists across page loads)
+  const search = searchParams.get('search') || ''
+  const status = searchParams.get('status') || 'ALL'
 
   // Table state
   const [page, setPage] = useState(1)
   const [limit] = useState(20)
-  const [status, setStatus] = useState<string>('ALL')
-  const [search, setSearch] = useState('')
   const [sortBy, setSortBy] = useState<'orderNumber' | 'createdAt' | 'total'>(
     'createdAt'
   )
@@ -180,10 +184,6 @@ export default function OrdersPage() {
     }
   }
 
-  //   // Open export URL in new window
-  //   window.open(`/api/admin/orders/export?${params.toString()}`, '_blank')
-  // }
-
   const handleExport = async () => {
     try {
       setIsExporting(true)
@@ -234,6 +234,40 @@ export default function OrdersPage() {
     }
   }
 
+  const updateSearchParams = (updates: Record<string, string>) => {
+    const params = new URLSearchParams(searchParams.toString())
+
+    // Update or delete parameters
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value) {
+        params.set(key, value)
+      } else {
+        params.delete(key)
+      }
+    })
+
+    // Reset to page 1 when search/filters change
+    if ('search' in updates || 'status' in updates) {
+      params.set('page', '1')
+    }
+
+    router.replace(`/admin/orders?${params.toString()}` as Route, {
+      scroll: false,
+    })
+  }
+
+  const handleSearchChange = (value: string) => {
+    updateSearchParams({ search: value })
+  }
+
+  const handleStatusChange = (newStatus: string) => {
+    updateSearchParams({ status: newStatus })
+  }
+
+  const clearSearch = () => {
+    updateSearchParams({ search: '' })
+  }
+
   // Loading state
   if (isLoading) {
     return (
@@ -269,6 +303,7 @@ export default function OrdersPage() {
           </Link>
         </Button>
       </div>
+
       {/* Page Header */}
       <div className="mb-8 text-muted-foreground">
         <h1 className="text-3xl font-bold">Orders</h1>
@@ -282,15 +317,13 @@ export default function OrdersPage() {
         {/* Left side: Filters */}
         <div className="flex flex-1 gap-2">
           {/* Search */}
-          <Input
-            placeholder="Search orders..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="max-w-xs"
+          <OrderSearch
+            initialValue={search}
+            onSearchChange={handleSearchChange}
           />
 
           {/* Status Filter */}
-          <Select value={status} onValueChange={setStatus}>
+          <Select value={status} onValueChange={handleStatusChange}>
             <SelectTrigger className="w-[180px] text-gray-400">
               <SelectValue placeholder="Filter by status" />
             </SelectTrigger>
@@ -304,6 +337,27 @@ export default function OrdersPage() {
             </SelectContent>
           </Select>
         </div>
+
+        {/* Active Search Indicator */}
+        {search && (
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary" className="flex items-center gap-2">
+              Searching for: &ldquo;{search}&rdquo;
+              <button
+                onClick={clearSearch}
+                className="ml-1 rounded-sm opacity-70 hover:opacity-100"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+            {ordersData && (
+              <p className="text-sm text-gray-600">
+                Found {ordersData.pagination.total} result
+                {ordersData.pagination.total !== 1 ? 's' : ''}
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Right side: Actions */}
         <div className="flex gap-2">
@@ -349,7 +403,6 @@ export default function OrdersPage() {
               </>
             )}
           </Button>
-          ;
         </div>
       </div>
 
