@@ -5,14 +5,19 @@ import { EmailService } from '~/server/services/EmailService' // From Story 2.4
 import { invalidateCacheKey, invalidateCache } from '~/lib/cache'
 import { formatCurrency } from '@repo/shared/utils'
 
+import {
+  isValidTransition,
+  getTransitionWarning,
+} from '~/lib/order-status-machine'
+
 // Valid status transitions (state machine)
-const VALID_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
-  PENDING: [OrderStatus.PROCESSING, OrderStatus.CANCELLED],
-  PROCESSING: [OrderStatus.SHIPPED, OrderStatus.CANCELLED],
-  SHIPPED: [OrderStatus.DELIVERED, OrderStatus.CANCELLED],
-  DELIVERED: [], // Terminal state
-  CANCELLED: [], // Terminal state
-}
+// const VALID_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
+//   PENDING: [OrderStatus.PROCESSING, OrderStatus.CANCELLED],
+//   PROCESSING: [OrderStatus.SHIPPED, OrderStatus.CANCELLED],
+//   SHIPPED: [OrderStatus.DELIVERED, OrderStatus.CANCELLED],
+//   DELIVERED: [], // Terminal state
+//   CANCELLED: [], // Terminal state
+// }
 
 // Type definitions for service methods
 interface ListOrdersParams {
@@ -265,29 +270,46 @@ export class OrderAdminService {
   /**
    * Validate status transition using state machine
    */
+  // validateStatusTransition(
+  //   currentStatus: OrderStatus,
+  //   newStatus: OrderStatus
+  // ): { valid: boolean; warning?: string } {
+  //   const validNextStates = VALID_TRANSITIONS[currentStatus] || []
+
+  //   if (!validNextStates.includes(newStatus)) {
+  //     return { valid: false }
+  //   }
+
+  //   // Special warning for risky transitions
+  //   if (
+  //     currentStatus === OrderStatus.SHIPPED &&
+  //     newStatus === OrderStatus.CANCELLED
+  //   ) {
+  //     return {
+  //       valid: true,
+  //       warning:
+  //         'Package may already be in transit. Customer may still receive the order.',
+  //     }
+  //   }
+
+  //   return { valid: true }
+  // }
+
   validateStatusTransition(
     currentStatus: OrderStatus,
     newStatus: OrderStatus
   ): { valid: boolean; warning?: string } {
-    const validNextStates = VALID_TRANSITIONS[currentStatus] || []
+    // Now uses shared module instead of local copy
+    const valid = isValidTransition(currentStatus, newStatus)
 
-    if (!validNextStates.includes(newStatus)) {
+    if (!valid) {
       return { valid: false }
     }
 
-    // Special warning for risky transitions
-    if (
-      currentStatus === OrderStatus.SHIPPED &&
-      newStatus === OrderStatus.CANCELLED
-    ) {
-      return {
-        valid: true,
-        warning:
-          'Package may already be in transit. Customer may still receive the order.',
-      }
-    }
+    // Check for warnings on risky transitions
+    const warning = getTransitionWarning(currentStatus, newStatus)
 
-    return { valid: true }
+    return warning ? { valid: true, warning } : { valid: true }
   }
 
   /**

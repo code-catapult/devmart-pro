@@ -1,4 +1,4 @@
-import { OrderAnalyticsService } from '~/server/services/OrderAnalyticsService'
+import { OrderAnalyticsService } from '../../src/server/services/OrderAnalyticsService'
 
 describe('OrderAnalyticsService', () => {
   const service = new OrderAnalyticsService()

@@ -21,27 +21,31 @@ import {
 } from '@repo/ui'
 import { AlertTriangle, Loader2 } from 'lucide-react'
 import { OrderStatus } from '@repo/shared/types'
+import {
+  getValidNextStatuses,
+  getTransitionWarning,
+} from '~/lib/order-status-machine'
 
 // State machine: defines valid status transitions
 // This prevents invalid operations like DELIVERED -> PENDING
-const VALID_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
-  PENDING: [OrderStatus.PROCESSING, OrderStatus.CANCELLED],
-  PROCESSING: [OrderStatus.SHIPPED, OrderStatus.CANCELLED],
-  SHIPPED: [OrderStatus.DELIVERED, OrderStatus.CANCELLED],
-  DELIVERED: [], // Terminal state - no further transitions
-  CANCELLED: [], // Terminal state - no further transitions
-}
+// const VALID_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
+//   PENDING: [OrderStatus.PROCESSING, OrderStatus.CANCELLED],
+//   PROCESSING: [OrderStatus.SHIPPED, OrderStatus.CANCELLED],
+//   SHIPPED: [OrderStatus.DELIVERED, OrderStatus.CANCELLED],
+//   DELIVERED: [], // Terminal state - no further transitions
+//   CANCELLED: [], // Terminal state - no further transitions
+// }
 
 // Risky transitions that require explicit warning
 // Example: Cancelling a SHIPPED order may require shipping carrier coordination
-const RISKY_TRANSITIONS: Record<string, string> = {
-  'SHIPPED->CANCELLED':
-    'Warning: This order has already been shipped. Cancelling may require coordinating with the shipping carrier and processing a return.',
-  'PROCESSING->CANCELLED':
-    'Warning: This order is being prepared. Cancelling now may waste inventory allocation.',
-  'DELIVERED->CANCELLED':
-    'Warning: This order was already delivered. Consider processing a refund instead.',
-}
+// const RISKY_TRANSITIONS: Record<string, string> = {
+//   'SHIPPED->CANCELLED':
+//     'Warning: This order has already been shipped. Cancelling may require coordinating with the shipping carrier and processing a return.',
+//   'PROCESSING->CANCELLED':
+//     'Warning: This order is being prepared. Cancelling now may waste inventory allocation.',
+//   'DELIVERED->CANCELLED':
+//     'Warning: This order was already delivered. Consider processing a refund instead.',
+// }
 
 interface StatusUpdateDialogProps {
   orderId: string
@@ -61,13 +65,21 @@ export function StatusUpdateDialog({
   // Local state for the selected new status
   const [selectedStatus, setSelectedStatus] = useState<string>('')
 
-  // Get the list of valid statuses based on current state
-  const validStatuses = VALID_TRANSITIONS[currentStatus] || []
+  // Use imported function instead of local VALID_TRANSITIONS
+  const validStatuses = getValidNextStatuses(currentStatus)
 
-  // Check if the selected transition is risky
+  // Use imported function instead of local RISKY_TRANSITIONS
   const warningMessage = selectedStatus
-    ? RISKY_TRANSITIONS[`${currentStatus}->${selectedStatus}`]
+    ? getTransitionWarning(currentStatus, selectedStatus as OrderStatus)
     : null
+
+  // // Get the list of valid statuses based on current state
+  // const validStatuses = VALID_TRANSITIONS[currentStatus] || []
+
+  // // Check if the selected transition is risky
+  // const warningMessage = selectedStatus
+  //   ? RISKY_TRANSITIONS[`${currentStatus}->${selectedStatus}`]
+  //   : null
 
   // tRPC utilities for cache management
   const utils = api.useUtils()

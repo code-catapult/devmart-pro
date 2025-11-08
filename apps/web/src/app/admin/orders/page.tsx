@@ -7,6 +7,13 @@ import { formatCurrency, formatDate } from '@repo/shared/utils'
 import { OrderStatus } from '@repo/shared/types'
 import { toast } from 'sonner'
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
   Badge,
   Button,
   Checkbox,
@@ -50,6 +57,10 @@ import {
 import { Route } from 'next'
 import Link from 'next/link'
 import { OrderSearch } from '~/components/admin/orders/OrderSearch'
+import {
+  isValidTransition,
+  getTransitionError,
+} from '~/lib/order-status-machine'
 
 // Status badge variants
 const STATUS_VARIANTS: Record<
@@ -86,6 +97,10 @@ export default function OrdersPage() {
   const [selectedOrderId, setSelectedOrderId] = useState<string>('')
   const [newStatus, setNewStatus] = useState<OrderStatus>('PENDING')
   const [statusNotes, setStatusNotes] = useState('')
+
+  // Alert dialog state for invalid transitions
+  const [alertDialogOpen, setAlertDialogOpen] = useState(false)
+  const [alertMessage, setAlertMessage] = useState('')
 
   const [isExporting, setIsExporting] = useState(false)
 
@@ -146,14 +161,35 @@ export default function OrdersPage() {
   ) => {
     if (selectedOrders.length === 0) return
 
+    // Validate all selected orders can transition to the new status
+    const invalidOrders = selectedOrders
+      .map((orderId) => orders.find((o) => o.id === orderId))
+      .filter((order) => order && !isValidTransition(order.status, newStatus))
+
+    if (invalidOrders.length > 0) {
+      const invalidOrder = invalidOrders[0]!
+      const errorMessage = getTransitionError(invalidOrder.status, newStatus)
+      setAlertMessage(
+        `Cannot update ${invalidOrders.length} order(s). ${errorMessage}`
+      )
+      setAlertDialogOpen(true)
+      return
+    }
+
     try {
       await bulkUpdateMutation.mutateAsync({
         orderIds: selectedOrders,
         status: newStatus,
       })
+      toast.success(
+        `Successfully updated ${selectedOrders.length} order(s) to ${newStatus}`
+      )
     } catch (err) {
       console.error('Bulk update failed:', err)
-      alert('Failed to update orders. Check console for details.')
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to update orders'
+      setAlertMessage(errorMessage)
+      setAlertDialogOpen(true)
     }
   }
 
@@ -170,6 +206,18 @@ export default function OrdersPage() {
   const handleUpdateStatus = async () => {
     if (!selectedOrderId) return
 
+    const currentOrder = orders.find((o) => o.id === selectedOrderId)
+    if (!currentOrder) return
+
+    // Validate status transition
+    if (!isValidTransition(currentOrder.status, newStatus)) {
+      const errorMessage = getTransitionError(currentOrder.status, newStatus)
+      setAlertMessage(errorMessage)
+      setAlertDialogOpen(true)
+      setIsStatusDialogOpen(false)
+      return
+    }
+
     try {
       await updateStatusMutation.mutateAsync({
         orderId: selectedOrderId,
@@ -178,9 +226,13 @@ export default function OrdersPage() {
       })
       setIsStatusDialogOpen(false)
       setStatusNotes('')
+      toast.success('Order status updated successfully')
     } catch (err) {
       console.error('Status update failed:', err)
-      alert('Failed to update order status. Check console for details.')
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to update order status'
+      setAlertMessage(errorMessage)
+      setAlertDialogOpen(true)
     }
   }
 
@@ -767,6 +819,21 @@ export default function OrdersPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Invalid Status Transition Alert Dialog */}
+      <AlertDialog open={alertDialogOpen} onOpenChange={setAlertDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Invalid Status Transition</AlertDialogTitle>
+            <AlertDialogDescription>{alertMessage}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setAlertDialogOpen(false)}>
+              OK
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

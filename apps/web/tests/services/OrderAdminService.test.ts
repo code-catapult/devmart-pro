@@ -1,5 +1,5 @@
-import { OrderAdminService } from '~/server/services/OrderAdminService'
 import { OrderStatus } from '@prisma/client'
+import { OrderAdminService } from '../../src/server/services/OrderAdminService'
 
 describe('OrderAdminService', () => {
   const service = new OrderAdminService()
