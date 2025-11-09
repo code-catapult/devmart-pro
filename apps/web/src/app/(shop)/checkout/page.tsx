@@ -56,12 +56,12 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 mb-24 mt-24">
-      <h1 className="text-3xl font-bold">Checkout</h1>
+    <div className="max-w-6xl mx-auto space-y-4 md:space-y-8 mb-12 md:mb-24 mt-12 md:mt-24 px-4 md:px-0">
+      <h1 className="text-2xl md:text-3xl font-bold">Checkout</h1>
 
       <CheckoutStepper currentStep={currentStep} />
 
-      <div className="grid lg:grid-cols-3 gap-8">
+      <div className="grid lg:grid-cols-3 gap-4 md:gap-8">
         <div className="lg:col-span-2">
           {currentStep === 'shipping' && (
             <ShippingForm
@@ -74,7 +74,10 @@ export default function CheckoutPage() {
             <>
               {createPaymentIntentMutation.isPending && (
                 <div className="flex items-center justify-center h-64 bg-white border rounded-lg">
-                  <Loader2 className="h-8 w-8 animate-spin" />
+                  <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+                  <p className="text-sm text-muted-foreground">
+                    Preparing payment...
+                  </p>
                 </div>
               )}
               {createPaymentIntentMutation.data?.clientSecret && (
@@ -94,7 +97,7 @@ export default function CheckoutPage() {
           )}
         </div>
 
-        <div>
+        <div className="order-first lg:order-last">
           <OrderSummary />
         </div>
       </div>

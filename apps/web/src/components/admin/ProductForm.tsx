@@ -52,6 +52,14 @@ const productFormSchema = z.object({
     .max(5, 'Maximum 5 images allowed'),
   status: z.enum(ProductStatus),
   slug: z.string().optional(),
+  sku: z
+    .string()
+    .min(1, 'SKU is required')
+    .max(50, 'SKU must be 50 characters or less')
+    .regex(
+      /^[A-Z0-9-]+$/,
+      'SKU must contain only uppercase letters, numbers, and hyphens'
+    ),
 })
 
 type ProductFormValues = z.infer<typeof productFormSchema>
@@ -95,6 +103,7 @@ export function ProductForm({
       images: initialData?.images || [],
       status: initialData?.status || 'ACTIVE',
       slug: initialData?.slug || '',
+      sku: initialData?.sku || '',
     },
   })
 
@@ -127,7 +136,34 @@ export function ProductForm({
             </FormItem>
           )}
         />
-
+        {/* SKU Field */}
+        <FormField
+          control={form.control}
+          name="sku"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>SKU (Stock Keeping Unit)</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  placeholder="ELEC-SMART-001"
+                  className="font-mono uppercase"
+                  disabled={!!initialData?.sku} // ⬅️ IMPORTANT: Disable if product already has SKU (edit mode)
+                  onChange={(e) => {
+                    // Auto-uppercase as user types
+                    field.onChange(e.target.value.toUpperCase())
+                  }}
+                />
+              </FormControl>
+              <FormDescription>
+                {initialData?.sku
+                  ? 'SKU cannot be changed once created'
+                  : 'Unique product identifier (e.g., ELEC-SMART-001)'}
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         {/* Description */}
         <FormField
           control={form.control}
@@ -150,7 +186,6 @@ export function ProductForm({
             </FormItem>
           )}
         />
-
         {/* Price and Inventory (Row) */}
         <div className="grid gap-4 md:grid-cols-2">
           {/* Price */}
@@ -208,7 +243,6 @@ export function ProductForm({
             )}
           />
         </div>
-
         {/* Category */}
         <FormField
           control={form.control}
@@ -237,7 +271,6 @@ export function ProductForm({
             </FormItem>
           )}
         />
-
         {/* Images */}
         <FormField
           control={form.control}
@@ -259,7 +292,6 @@ export function ProductForm({
             </FormItem>
           )}
         />
-
         {/* Status */}
         <FormField
           control={form.control}
@@ -286,7 +318,6 @@ export function ProductForm({
             </FormItem>
           )}
         />
-
         {/* Slug (Optional) */}
         <FormField
           control={form.control}
@@ -304,7 +335,6 @@ export function ProductForm({
             </FormItem>
           )}
         />
-
         {/* Submit Button */}
         <div className="flex justify-end gap-4">
           <Button

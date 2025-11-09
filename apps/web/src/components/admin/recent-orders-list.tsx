@@ -9,15 +9,11 @@ import {
   CardTitle,
   Badge,
   Button,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
 } from '@repo/ui'
 import { formatPrice } from '@repo/shared/utils'
 import { formatDistance } from 'date-fns'
 import { OrderStatus } from '@repo/shared/types'
+import { StatusUpdateDialog } from '~/components/admin/orders/StatusUpdateDialog'
 
 /**
  * RecentOrdersList Component (Mobile-Responsive)
@@ -33,20 +29,27 @@ import { OrderStatus } from '@repo/shared/types'
 
 export function RecentOrdersList() {
   const [page, setPage] = useState(1)
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null)
+  const [selectedOrderStatus, setSelectedOrderStatus] =
+    useState<OrderStatus | null>(null)
+  const [showStatusDialog, setShowStatusDialog] = useState(false)
+
   const { data, isLoading } = api.admin.dashboard.getRecentOrders.useQuery({
     limit: 10,
     page,
   })
-  const utils = api.useUtils()
 
-  const updateStatusMutation =
-    api.admin.dashboard.updateOrderStatus.useMutation({
-      onSuccess: () => {
-        // Invalidate and refetch orders
-        void utils.admin.dashboard.getRecentOrders.invalidate()
-        void utils.admin.dashboard.getDashboardMetrics.invalidate()
-      },
-    })
+  const handleStatusClick = (orderId: string, currentStatus: OrderStatus) => {
+    setSelectedOrderId(orderId)
+    setSelectedOrderStatus(currentStatus)
+    setShowStatusDialog(true)
+  }
+
+  const handleDialogClose = () => {
+    setShowStatusDialog(false)
+    setSelectedOrderId(null)
+    setSelectedOrderStatus(null)
+  }
 
   const getStatusColor = (status: string) => {
     const colors = {
@@ -98,26 +101,13 @@ export function RecentOrdersList() {
                   <span className="font-semibold">
                     {formatPrice(order.total)}
                   </span>
-                  <Select
-                    value={order.status}
-                    onValueChange={(status: OrderStatus) => {
-                      updateStatusMutation.mutate({
-                        orderId: order.id,
-                        status: status,
-                      })
-                    }}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleStatusClick(order.id, order.status)}
                   >
-                    <SelectTrigger className="w-32">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="PENDING">Pending</SelectItem>
-                      <SelectItem value="PROCESSING">Processing</SelectItem>
-                      <SelectItem value="SHIPPED">Shipped</SelectItem>
-                      <SelectItem value="DELIVERED">Delivered</SelectItem>
-                      <SelectItem value="CANCELLED">Cancelled</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    Update Status
+                  </Button>
                 </div>
               </div>
             ))}
@@ -151,6 +141,17 @@ export function RecentOrdersList() {
           </div>
         )}
       </CardContent>
+
+      {/* Status Update Dialog */}
+      {selectedOrderId && selectedOrderStatus && (
+        <StatusUpdateDialog
+          orderId={selectedOrderId}
+          currentStatus={selectedOrderStatus}
+          open={showStatusDialog}
+          onOpenChange={setShowStatusDialog}
+          onSuccess={handleDialogClose}
+        />
+      )}
     </Card>
   )
 }

@@ -25,13 +25,40 @@ const eslintConfig = [
   js.configs.recommended,
   ...compat.extends('next/core-web-vitals', 'next/typescript', 'prettier'),
   {
-    files: ['**/*.{ts,tsx}'],
+    files: ['**/*.{ts,tsx}', '!tests/**/*.{ts,tsx}'],
     languageOptions: {
       parser: tsparser,
       parserOptions: {
         ecmaVersion: 'latest',
         sourceType: 'module',
         project: './tsconfig.json',
+      },
+    },
+    plugins: {
+      '@typescript-eslint': tseslint,
+    },
+    rules: {
+      ...tseslint.configs.recommended.rules,
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+        },
+      ],
+      '@typescript-eslint/no-explicit-any': 'warn',
+      'prefer-const': 'off',
+      'no-console': 'off',
+    },
+  },
+  {
+    files: ['tests/**/*.{ts,tsx}'],
+    languageOptions: {
+      parser: tsparser,
+      parserOptions: {
+        ecmaVersion: 'latest',
+        sourceType: 'module',
+        project: './tsconfig.tests.json',
       },
     },
     plugins: {

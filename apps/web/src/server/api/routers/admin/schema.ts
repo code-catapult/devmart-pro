@@ -47,6 +47,14 @@ export const productCreateSchema = z.object({
         .optional()
     )
     .describe('Auto-generated if not provided'),
+  sku: z
+    .string()
+    .min(1, 'SKU is required')
+    .max(50, 'SKU must be 50 characters or less')
+    .regex(
+      /^[A-Z0-9-]+$/,
+      'SKU must contain only uppercase letters, numbers, and hyphens'
+    ),
 })
 
 // ✨ ENHANCED: Composition with .partial() for updates
@@ -55,6 +63,7 @@ export const productUpdateSchema = productCreateSchema
   .extend({
     id: z.cuid('Invalid product ID'),
   })
+  .omit({ sku: true })
   .refine(
     (data) => Object.keys(data).length > 1, // At least one field besides ID
     { message: 'At least one field must be provided for update' }
@@ -223,4 +232,153 @@ export const deleteCategorySchema = z.object({
 export const updateProductStatusSchema = z.object({
   productId: z.cuid('Invalid product ID'),
   status: z.enum(ProductStatus),
+})
+
+/**
+ * Order Management Schemas
+ *
+ * ✨ ENHANCEMENTS:
+ * - Reusable order status validations
+ * - Consistent date range filters
+ * - Refund reason tracking
+ */
+
+// Order Status Enum (without 'ALL' option)
+export const orderStatusSchema = z.enum([
+  'PENDING',
+  'PROCESSING',
+  'SHIPPED',
+  'DELIVERED',
+  'CANCELLED',
+])
+
+// Order Status with 'ALL' option for filtering
+export const orderStatusFilterSchema = z
+  .enum(['ALL', 'PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'])
+  .default('ALL')
+
+// Refund Reason Enum
+export const refundReasonSchema = z.enum([
+  'CUSTOMER_REQUEST',
+  'DAMAGED',
+  'OUT_OF_STOCK',
+  'OTHER',
+])
+
+// Analytics Period Enum
+export const analyticsPeriodSchema = z
+  .enum(['daily', 'weekly', 'monthly'])
+  .default('daily')
+
+// Reusable Date Range Filter
+export const dateRangeSchema = z.object({
+  startDate: z.date().optional(),
+  endDate: z.date().optional(),
+})
+
+// Order List/Query Schema
+export const orderListSchema = z.object({
+  search: z.string().optional(), // Search by order number or customer name/email
+  status: orderStatusFilterSchema,
+  startDate: z.date().optional(), // Filter by date range (inclusive)
+  endDate: z.date().optional(),
+  sortBy: z.enum(['orderNumber', 'createdAt', 'total']).default('createdAt'),
+  sortOrder: z.enum(['asc', 'desc']).default('desc'), // Newest first by default
+  page: z.number().min(1).default(1),
+  limit: z.number().min(1).max(100).default(20), // Max 100 per page prevents memory issues
+})
+
+// Single Order Fetch
+export const orderIdSchema = z.object({
+  id: z.cuid('Invalid order ID'),
+})
+
+// Customer Orders Query
+export const customerOrdersSchema = z.object({
+  userId: z.cuid('Invalid user ID'),
+  status: orderStatusSchema.optional(), // Optional status filter
+  page: z.number().min(1).default(1),
+  limit: z.number().min(1).max(50).default(10), // Smaller limit for customer history
+})
+
+// Order Analytics Query
+export const orderAnalyticsSchema = z.object({
+  startDate: z.date().optional(),
+  endDate: z.date().optional(),
+  period: analyticsPeriodSchema,
+})
+
+// Update Order Status
+export const updateOrderStatusSchema = z.object({
+  orderId: z.cuid('Invalid order ID'),
+  status: orderStatusSchema,
+  notes: z.string().optional(), // Admin can add notes for audit trail
+})
+
+// Add Tracking Info (for orders in PROCESSING status)
+export const addTrackingInfoSchema = z.object({
+  orderId: z.cuid('Invalid order ID'),
+  trackingNumber: z.string().min(1, 'Tracking number is required'),
+  shippingCarrier: z.string().min(1, 'Carrier is required'),
+  estimatedDelivery: z.date().optional(),
+})
+
+// Update Tracking Info (for orders in PROCESSING or SHIPPED status)
+export const updateTrackingInfoSchema = z.object({
+  orderId: z.cuid('Invalid order ID'),
+  trackingNumber: z.string().min(1, 'Tracking number is required'),
+  shippingCarrier: z.string().min(1, 'Carrier is required'),
+  estimatedDelivery: z.date().optional(),
+})
+
+// Process Refund
+export const processRefundSchema = z.object({
+  orderId: z.cuid('Invalid order ID'),
+  amount: z.number().min(0), // 0 = full refund
+  reason: refundReasonSchema,
+  notes: z.string().optional(),
+})
+
+// Bulk Update Order Status
+export const bulkUpdateOrderStatusSchema = z.object({
+  orderIds: z.array(z.cuid()).min(1, 'At least one order required'),
+  status: z.enum(['PROCESSING', 'SHIPPED', 'CANCELLED']), // Only allow safe bulk transitions
+})
+
+// Customer Order Stats
+export const getCustomerOrderStatsSchema = z.object({
+  customerId: z.cuid(),
+})
+
+// Order notes Schemas
+export const addOrderNoteSchema = z.object({
+  orderId: z.string(),
+  content: z.string().min(1).max(5000),
+  isInternal: z.boolean().default(true),
+})
+
+export const getOrderNotesSchema = z.object({
+  orderId: z.string(),
+})
+
+/**
+ * Customer Management Schemas
+ *
+ * ✨ ENHANCEMENTS:
+ * - Customer list with search and pagination
+ * - Reusable customer ID validation
+ */
+
+// Customer List Query
+export const customerListSchema = z.object({
+  search: z.string().optional(), // Search by name or email
+  page: z.number().min(1).default(1),
+  limit: z.number().min(1).max(100).default(20),
+  sortBy: z.enum(['name', 'email', 'createdAt']).default('createdAt'),
+  sortOrder: z.enum(['asc', 'desc']).default('desc'),
+})
+
+// Single Customer Fetch
+export const customerIdSchema = z.object({
+  id: z.cuid('Invalid customer ID'),
 })

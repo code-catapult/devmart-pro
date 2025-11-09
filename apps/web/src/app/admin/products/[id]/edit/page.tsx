@@ -159,6 +159,7 @@ export default function EditProductPage({
           images: product.images,
           status: product.status,
           slug: product.slug,
+          sku: product.sku, // Include SKU for edit mode
         }}
         onSubmit={async (data) => {
           await updateProduct.mutateAsync({

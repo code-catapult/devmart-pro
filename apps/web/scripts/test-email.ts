@@ -17,7 +17,7 @@ async function testEmail() {
     console.log('Testing email service...\n')
 
     // Test email address - CHANGE THIS to your actual email
-    const testEmail = 'your-email@example.com'
+    const testEmail = 'shamarilewis22@gmail.com'
     const testUserName = 'Test User'
 
     // Create a complete mock order matching the expected type
@@ -31,6 +31,12 @@ async function testEmail() {
       shipping: 500,
       total: 6978,
       stripePaymentIntentId: 'pi_test_123456789',
+      trackingNumber: 'TRACK123456',
+      shippingCarrier: 'UPS',
+      estimatedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      refundAmount: 0,
+      refundReason: null,
+      refundedAt: null,
       createdAt: new Date(),
       updatedAt: new Date(),
       orderItems: [
@@ -44,6 +50,7 @@ async function testEmail() {
             id: 'test-product-1',
             name: 'Premium Wireless Headphones',
             slug: 'premium-wireless-headphones',
+            sku: 'HEADPHONES-001',
             description: 'High-quality wireless headphones',
             price: 2999,
             comparePrice: null,

@@ -71,12 +71,12 @@ export default async function AdminLayout({
 
   // User is authenticated AND authorized
   return (
-    <div className="flex flex-col md:flex-row h-screen bg-gray-50">
+    <div className="flex flex-col md:flex-row min-h-screen">
       {/* Desktop Sidebar (hidden on mobile) */}
       <AdminSidebar user={session.user} />
 
       {/* Main Content Area */}
-      <main className="flex-1 overflow-y-auto">
+      <main className="flex-1">
         {/* Mobile Header (hidden on desktop) */}
         <AdminMobileHeader user={session.user} />
 

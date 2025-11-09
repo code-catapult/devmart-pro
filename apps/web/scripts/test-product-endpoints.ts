@@ -51,6 +51,7 @@ async function testProductEndpoints() {
     const newProduct = await caller.admin.products.create({
       name: 'Test Laptop',
       slug: 'test-laptop',
+      sku: 'TEST-LAPTOP-001',
       description: 'High-performance laptop for testing',
       price: 129900, // $1,299.00 in cents
       inventory: 50,

@@ -82,9 +82,11 @@ export function PaymentForm({ shippingAddress, onBack }: PaymentFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="bg-white border rounded-lg p-6">
-        <h2 className="text-xl font-semibold mb-6">Payment Details</h2>
+    <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+      <div className="bg-white border rounded-lg p-4 sm:p-6">
+        <h2 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6 text-gray-700">
+          Payment Details
+        </h2>
 
         <PaymentElement
           options={{
@@ -93,13 +95,13 @@ export function PaymentForm({ shippingAddress, onBack }: PaymentFormProps) {
         />
       </div>
 
-      <div className="flex gap-4">
+      <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
         <Button
           type="button"
           variant="outline"
           size="lg"
           onClick={onBack}
-          className="flex-1"
+          className="flex-1 h-11 sm:h-12 text-sm sm:text-base order-2 sm:order-1 py-2 sm:py-4"
           disabled={isProcessing}
         >
           Back to Shipping
@@ -108,7 +110,7 @@ export function PaymentForm({ shippingAddress, onBack }: PaymentFormProps) {
         <Button
           type="submit"
           size="lg"
-          className="flex-1"
+          className="flex-1 h-11 sm:h-12 text-sm sm:text-base order-1 sm:order-2 py-2 sm:py-4"
           disabled={!stripe || isProcessing}
         >
           {isProcessing ? (

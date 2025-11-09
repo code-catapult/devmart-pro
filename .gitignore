@@ -63,3 +63,15 @@ redis_data/
 
 # Miscellaneous
 project-optimizations.md
+orderadminservice-updates.md
+refundservice-updates.md
+sku-migration-strategy.md
+BACKFILL-TROUBLESHOOTING.md
+diagnose-sku-issues.ts
+backfill-skus.ts
+state-machine-update.md
+SECURITY_PATTERNS.md
+MAINTAINABLE-DESIGN-PATTERNS.md
+api-service-techniques.md
+task-driven-development.md
+orders-status-dialog.md

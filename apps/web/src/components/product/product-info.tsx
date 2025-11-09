@@ -74,11 +74,10 @@ export function ProductInfo({ product }: ProductInfoProps) {
               {product._count.reviews === 1 ? 'review' : 'reviews'}
             </dd>
           </div>
+          {/* SKU */}
           <div>
             <dt className="text-sm text-muted-foreground">SKU</dt>
-            <dd className="font-medium font-mono text-sm">
-              {product.id.slice(0, 8)}
-            </dd>
+            <dd className="font-medium font-mono text-sm">{product.sku}</dd>
           </div>
         </dl>
       </div>

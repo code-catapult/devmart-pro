@@ -37,24 +37,28 @@ model HealthCheck {
 
 // Core User model for authentication and user management
 model User {
-  id               String    @id @default(cuid())
-  email            String    @unique
-  passwordHash     String?   @map("password_hash")
+  id                 String    @id @default(cuid())
+  email              String    @unique
+  passwordHash       String?   @map("password_hash")
   lastPasswordChange DateTime? @map("last_password_change")
-  emailVerified    DateTime? @map("email_verified")
-  name             String?
-  role             Role      @default(USER)
-  resetToken       String?   @map("reset_token")
-  resetTokenExpiry DateTime? @map("reset_token_expiry")
-  createdAt        DateTime  @default(now()) @map("created_at")
-  updatedAt        DateTime  @updatedAt @map("updated_at")
+  emailVerified      DateTime? @map("email_verified")
+  name               String?
+  role               Role      @default(USER)
+  resetToken         String?   @map("reset_token")
+  resetTokenExpiry   DateTime? @map("reset_token_expiry")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
 
   // Relationships
-  accounts  Account[]
-  orders    Order[]
-  cartItems CartItem[]
-  reviews   Review[]
+  accounts           Account[]
+  orders             Order[]
+  cartItems          CartItem[]
+  reviews            Review[]
+  adminNotes         OrderNote[]
+  orderStatusChanges OrderStatusChange[] @relation("AdminStatusChanges")
 
+  @@index([email]) // Fast email search
+  @@index([name]) // Fast name search (if supported by DB)
   @@map("users")
 }
 
@@ -83,12 +87,12 @@ model Account {
 
 // E-commerce Category model with hierarchical support
 model Category {
-  id          String  @id @default(cuid())
+  id          String   @id @default(cuid())
   name        String
-  slug        String  @unique
+  slug        String   @unique
   description String?
-  imageUrl    String? @map("image_url")
-  parentId    String? @map("parent_id")
+  imageUrl    String?  @map("image_url")
+  parentId    String?  @map("parent_id")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
@@ -104,67 +108,113 @@ model Category {
 
 // Product model for e-commerce catalog
 model Product {
-  id          String        @id @default(cuid())
-  name        String
-  slug        String        @unique
-  description String?
-  price       Int           // Stored in cents for precision
-  comparePrice Int?         @map("compare_price") // Optional compare-at price
-  inventory   Int           @default(0)
-  images      String[]      // Array of image URLs
-  status      ProductStatus @default(ACTIVE)
-  categoryId  String        @map("category_id")
-  createdAt   DateTime      @default(now()) @map("created_at")
-  updatedAt   DateTime      @updatedAt @map("updated_at")
+  id           String        @id @default(cuid())
+  name         String
+  slug         String        @unique
+  sku          String        @unique
+  description  String?
+  price        Int // Stored in cents for precision
+  comparePrice Int?          @map("compare_price") // Optional compare-at price
+  inventory    Int           @default(0)
+  images       String[] // Array of image URLs
+  status       ProductStatus @default(ACTIVE)
+  categoryId   String        @map("category_id")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
 
   // Relationships
-  category  Category    @relation(fields: [categoryId], references: [id])
+  category   Category    @relation(fields: [categoryId], references: [id])
   orderItems OrderItem[]
-  cartItems CartItem[]
-  reviews   Review[]
+  cartItems  CartItem[]
+  reviews    Review[]
 
   // Indexes for performance
   @@index([categoryId])
   @@index([slug])
   @@index([status])
+  @@index([sku])
   @@map("products")
+}
+
+model OrderNote {
+  id         String   @id @default(cuid())
+  orderId    String
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  adminId    String
+  admin      User     @relation(fields: [adminId], references: [id])
+  content    String   @db.Text
+  isInternal Boolean  @default(true) // true = internal note, false = customer-visible
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([orderId])
+  @@index([adminId])
+  @@index([createdAt])
+}
+
+model OrderStatusChange {
+  id             String       @id @default(cuid())
+  orderId        String
+  order          Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  previousStatus OrderStatus?
+  newStatus      OrderStatus
+  changedBy      String? // Admin user ID
+  changedByUser  User?        @relation("AdminStatusChanges", fields: [changedBy], references: [id])
+  notes          String?      @db.Text
+  createdAt      DateTime     @default(now())
+
+  @@index([orderId])
+  @@index([createdAt])
 }
 
 // Order model for purchase tracking
 model Order {
-  id            String      @id @default(cuid())
-  orderNumber   String      @unique @map("order_number") // Human-readable order number
-  userId        String      @map("user_id")
-  status        OrderStatus @default(PENDING)
-  subtotal      Int         // Amount in cents
-  tax           Int         @default(0) // Tax amount in cents
-  shipping      Int         @default(0) // Shipping cost in cents
-  total         Int         // Total amount in cents
-  stripePaymentIntentId String? @map("stripe_payment_intent_id")
+  id                    String      @id @default(cuid())
+  orderNumber           String      @unique @map("order_number") // Human-readable order number
+  userId                String      @map("user_id")
+  status                OrderStatus @default(PENDING)
+  subtotal              Int // Amount in cents
+  tax                   Int         @default(0) // Tax amount in cents
+  shipping              Int         @default(0) // Shipping cost in cents
+  total                 Int // Total amount in cents
+  stripePaymentIntentId String?     @map("stripe_payment_intent_id")
 
   // Shipping address stored as JSON for flexibility
   shippingAddress Json @map("shipping_address")
+
+  // Shipping tracking information
+  trackingNumber    String?   @map("tracking_number")
+  shippingCarrier   String?   @map("shipping_carrier")
+  estimatedDelivery DateTime? @map("estimated_delivery")
+
+  // Refund tracking
+  refundAmount Int?      @map("refund_amount") // Amount refunded in cents
+  refundReason String?   @map("refund_reason") // Reason for refund
+  refundedAt   DateTime? @map("refunded_at") // When refund was processed
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relationships
-  user       User        @relation(fields: [userId], references: [id])
-  orderItems OrderItem[]
+  user          User                @relation(fields: [userId], references: [id])
+  orderItems    OrderItem[]
+  notes         OrderNote[]
+  statusHistory OrderStatusChange[]
 
-  @@index([userId])
-  @@index([status])
-  @@index([orderNumber])
+  @@index([userId]) // Faster user lookup
+  @@index([status]) // Faster status filter
+  @@index([orderNumber]) // Faster order number lookup
+  @@index([createdAt]) // Faster date sorting
   @@map("orders")
 }
 
 // Order items for tracking products in orders
 model OrderItem {
-  id       String @id @default(cuid())
-  orderId  String @map("order_id")
+  id        String @id @default(cuid())
+  orderId   String @map("order_id")
   productId String @map("product_id")
-  quantity Int
-  price    Int    // Historical price at time of order (in cents)
+  quantity  Int
+  price     Int // Historical price at time of order (in cents)
 
   // Relationships
   order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
@@ -199,7 +249,7 @@ model Review {
   id        String   @id @default(cuid())
   userId    String   @map("user_id")
   productId String   @map("product_id")
-  rating    Int      // 1-5 star rating
+  rating    Int // 1-5 star rating
   comment   String?
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -217,14 +267,14 @@ model Review {
 
 // Webhook event tracking for idempotency
 model WebhookEvent {
-  id            String   @id @default(cuid())
-  stripeEventId String   @unique @map("stripe_event_id") // Stripe's event ID
-  eventType     String   @map("event_type") // e.g., payment_intent.succeeded
-  processed     Boolean  @default(false)
-  processingError String? @map("processing_error") @db.Text
-  payload       Json     // Store the full event payload for debugging
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
+  id              String   @id @default(cuid())
+  stripeEventId   String   @unique @map("stripe_event_id") // Stripe's event ID
+  eventType       String   @map("event_type") // e.g., payment_intent.succeeded
+  processed       Boolean  @default(false)
+  processingError String?  @map("processing_error") @db.Text
+  payload         Json // Store the full event payload for debugging
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
 
   @@index([stripeEventId])
   @@index([eventType])
