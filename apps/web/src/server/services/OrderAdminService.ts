@@ -600,56 +600,74 @@ export class OrderAdminService {
   /**
    * Send status change email notification
    */
+  // private async sendStatusChangeEmail(
+  //   order: Prisma.OrderGetPayload<{
+  //     include: { user: true; orderItems: { include: { product: true } } }
+  //   }>,
+  //   previousStatus: OrderStatus,
+  //   newStatus: OrderStatus
+  // ) {
+  //   const templates: Partial<
+  //     Record<OrderStatus, { subject: string; message: string }>
+  //   > = {
+  //     PROCESSING: {
+  //       subject: `Your order ${order.orderNumber} is being prepared`,
+  //       message: `We're preparing your order for shipment. You'll receive a tracking number once it ships.`,
+  //     },
+  //     SHIPPED: {
+  //       subject: `Your order ${order.orderNumber} has been shipped`,
+  //       message: `Your package is on its way! ${
+  //         order.trackingNumber
+  //           ? `Track it with ${order.shippingCarrier}: ${order.trackingNumber}`
+  //           : "You'll receive tracking information soon."
+  //       }`,
+  //     },
+  //     DELIVERED: {
+  //       subject: `Your order ${order.orderNumber} has been delivered`,
+  //       message: `Your package has been delivered. Thank you for your order!`,
+  //     },
+  //     CANCELLED: {
+  //       subject: `Your order ${order.orderNumber} has been cancelled`,
+  //       message: `Your order has been cancelled. ${
+  //         previousStatus === OrderStatus.PROCESSING ||
+  //         previousStatus === OrderStatus.SHIPPED
+  //           ? 'A refund will be processed if payment was made.'
+  //           : ''
+  //       }`,
+  //     },
+  //   }
+
+  //   const template = templates[newStatus]
+  //   if (!template) return // No email for PENDING status
+
+  //   await this.emailService.sendEmail({
+  //     to: order.user.email,
+  //     subject: template.subject,
+  //     html: `
+  //       <h2>${template.subject}</h2>
+  //       <p>${template.message}</p>
+  //       <p><strong>Order Number:</strong> ${order.orderNumber}</p>
+  //       <p><strong>Order Total:</strong> $${(order.total / 100).toFixed(2)}</p>
+  //     `,
+  //   })
+  // }
+
   private async sendStatusChangeEmail(
     order: Prisma.OrderGetPayload<{
-      include: { user: true; orderItems: { include: { product: true } } }
+      include: {
+        user: true
+        orderItems: { include: { product: true } }
+      }
     }>,
     previousStatus: OrderStatus,
     newStatus: OrderStatus
-  ) {
-    const templates: Partial<
-      Record<OrderStatus, { subject: string; message: string }>
-    > = {
-      PROCESSING: {
-        subject: `Your order ${order.orderNumber} is being prepared`,
-        message: `We're preparing your order for shipment. You'll receive a tracking number once it ships.`,
-      },
-      SHIPPED: {
-        subject: `Your order ${order.orderNumber} has been shipped`,
-        message: `Your package is on its way! ${
-          order.trackingNumber
-            ? `Track it with ${order.shippingCarrier}: ${order.trackingNumber}`
-            : "You'll receive tracking information soon."
-        }`,
-      },
-      DELIVERED: {
-        subject: `Your order ${order.orderNumber} has been delivered`,
-        message: `Your package has been delivered. Thank you for your order!`,
-      },
-      CANCELLED: {
-        subject: `Your order ${order.orderNumber} has been cancelled`,
-        message: `Your order has been cancelled. ${
-          previousStatus === OrderStatus.PROCESSING ||
-          previousStatus === OrderStatus.SHIPPED
-            ? 'A refund will be processed if payment was made.'
-            : ''
-        }`,
-      },
-    }
-
-    const template = templates[newStatus]
-    if (!template) return // No email for PENDING status
-
-    await this.emailService.sendEmail({
-      to: order.user.email,
-      subject: template.subject,
-      html: `
-        <h2>${template.subject}</h2>
-        <p>${template.message}</p>
-        <p><strong>Order Number:</strong> ${order.orderNumber}</p>
-        <p><strong>Order Total:</strong> $${(order.total / 100).toFixed(2)}</p>
-      `,
-    })
+  ): Promise<void> {
+    // Delegate to EmailService - it has the rich HTML templates
+    await this.emailService.sendOrderStatusChangeEmail(
+      order,
+      previousStatus,
+      newStatus
+    )
   }
 
   /**

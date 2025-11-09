@@ -17,7 +17,7 @@ async function testEmail() {
     console.log('Testing email service...\n')
 
     // Test email address - CHANGE THIS to your actual email
-    const testEmail = 'your-email@example.com'
+    const testEmail = 'shamarilewis22@gmail.com'
     const testUserName = 'Test User'
 
     // Create a complete mock order matching the expected type
