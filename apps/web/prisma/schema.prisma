@@ -27,12 +27,69 @@ enum OrderStatus {
   CANCELLED
 }
 
+enum NoteCategory {
+  ISSUE
+  RESOLUTION
+  FOLLOW_UP
+  GENERAL
+}
+
+enum ActivityAction {
+  LOGIN
+  LOGIN_FAILED
+  LOGOUT
+  PROFILE_UPDATED
+  PASSWORD_CHANGED
+  ORDER_CREATED
+  ROLE_CHANGED
+  ACCOUNT_SUSPENDED
+  ACCOUNT_ACTIVATED
+}
+
+
 model HealthCheck {
   id        Int      @id @default(autoincrement())
   status    String   @default("ok")
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("health_check")
+}
+
+// Add ActivityLog model
+model ActivityLog {
+  id        String         @id @default(cuid())
+  userId    String
+  action    ActivityAction
+  metadata  Json?          // Flexible JSON for action-specific details
+  ipAddress String
+  userAgent String         @db.Text // User agent can be long
+  createdAt DateTime       @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@index([ipAddress]) // For detecting actions from same IP
+}
+
+model SupportNote {
+  id        String        @id @default(cuid())
+  userId    String        // Customer the note is about
+  adminId   String        // Admin who created the note
+  category  NoteCategory
+  content   String        @db.Text // Use Text for longer content
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  // Relations
+  user  User @relation("UserSupportNotes", fields: [userId], references: [id], onDelete: Cascade)
+  admin User @relation("AdminSupportNotes", fields: [adminId], references: [id], onDelete: Restrict)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([category])
 }
 
 // Core User model for authentication and user management
@@ -49,6 +106,11 @@ model User {
   createdAt          DateTime  @default(now()) @map("created_at")
   updatedAt          DateTime  @updatedAt @map("updated_at")
 
+  // Account suspension fields
+  suspended         Boolean   @default(false)
+  suspendedAt       DateTime?
+  suspensionReason  String?
+
   // Relationships
   accounts           Account[]
   orders             Order[]
@@ -56,9 +118,13 @@ model User {
   reviews            Review[]
   adminNotes         OrderNote[]
   orderStatusChanges OrderStatusChange[] @relation("AdminStatusChanges")
+  supportNotesAsUser SupportNote[] @relation("UserSupportNotes")
+  supportNotesAsAdmin SupportNote[] @relation("AdminSupportNotes")
+  activityLogs        ActivityLog[]
 
   @@index([email]) // Fast email search
   @@index([name]) // Fast name search (if supported by DB)
+  @@index([suspended]) // Index for efficient filtering by suspension status
   @@map("users")
 }
 
