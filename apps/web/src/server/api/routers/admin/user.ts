@@ -3,7 +3,7 @@ import {
   activateAccountSchema,
   getSupportNotesSchema,
   listUsersSchema,
-  addSupportNoteSchema,
+  addSupportNotesSchema,
   suspendAccountSchema,
   getActivityLogSchema,
   userProfileSchema,
@@ -189,7 +189,7 @@ export const userRouter = createTRPCRouter({
    * Associates note with admin author for accountability
    */
   addSupportNote: adminProcedure
-    .input(addSupportNoteSchema)
+    .input(addSupportNotesSchema)
     .mutation(async ({ input, ctx }) => {
       const note = await supportService.addNote({
         userId: input.userId,

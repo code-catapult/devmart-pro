@@ -442,7 +442,7 @@ export const activateAccountSchema = z.object({
   userId: z.cuid('Invalid user ID'),
 })
 
-export const addSupportNoteSchema = z.object({
+export const addSupportNotesSchema = z.object({
   userId: z.cuid('Invalid user ID'),
   category: z.enum(['ISSUE', 'RESOLUTION', 'FOLLOW_UP', 'GENERAL']),
   content: z.string().min(1).max(5000), // Reasonable length limit
