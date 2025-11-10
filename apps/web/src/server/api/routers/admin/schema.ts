@@ -382,3 +382,68 @@ export const customerListSchema = z.object({
 export const customerIdSchema = z.object({
   id: z.cuid('Invalid customer ID'),
 })
+
+// Admin User Management Schemas
+export const listUsersSchema = z.object({
+  search: z.string().optional(), // Partial match on name or email
+  role: z.enum(['ALL', 'USER', 'ADMIN']).default('ALL'),
+  status: z.enum(['ALL', 'ACTIVE', 'SUSPENDED']).default('ALL'),
+  sortBy: z
+    .enum(['name', 'email', 'createdAt', 'totalSpent'])
+    .default('createdAt'),
+  sortOrder: z.enum(['asc', 'desc']).default('desc'),
+  page: z.number().min(1).default(1),
+  limit: z.number().min(1).max(100).default(20), // Max 100 to prevent performance issues
+})
+
+export const userProfileSchema = z.object({
+  id: z.cuid('Invalid ID'),
+})
+
+export const getSupportNotesSchema = z.object({
+  userId: z.cuid('Invalid user ID'),
+  category: z
+    .enum(['ALL', 'ISSUE', 'RESOLUTION', 'FOLLOW_UP', 'GENERAL'])
+    .default('ALL'),
+})
+
+export const getActivityLogSchema = z.object({
+  userId: z.cuid('Invalid user ID'),
+  action: z
+    .enum([
+      'ALL',
+      'LOGIN',
+      'LOGIN_FAILED',
+      'LOGOUT',
+      'PROFILE_UPDATED',
+      'PASSWORD_CHANGED',
+      'ORDER_CREATED',
+      'ROLE_CHANGED',
+      'ACCOUNT_SUSPENDED',
+      'ACCOUNT_ACTIVATED',
+    ])
+    .default('ALL'),
+  page: z.number().min(1).default(1),
+  limit: z.number().min(1).max(100).default(50),
+})
+
+export const userRoleSchema = z.object({
+  userId: z.cuid('Invalid user ID'),
+  role: z.enum(['USER', 'ADMIN']),
+})
+
+export const suspendAccountSchema = z.object({
+  userId: z.cuid('Invalid user ID'),
+  reason: z.enum(['FRAUD', 'ABUSE', 'PAYMENT_ISSUES', 'OTHER']),
+  notes: z.string().optional(),
+})
+
+export const activateAccountSchema = z.object({
+  userId: z.cuid('Invalid user ID'),
+})
+
+export const addSupportNoteSchema = z.object({
+  userId: z.cuid('Invalid user ID'),
+  category: z.enum(['ISSUE', 'RESOLUTION', 'FOLLOW_UP', 'GENERAL']),
+  content: z.string().min(1).max(5000), // Reasonable length limit
+})
