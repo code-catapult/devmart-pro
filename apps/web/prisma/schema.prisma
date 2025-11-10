@@ -7,7 +7,309 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Enum definitions
+model HealthCheck {
+  id        Int      @id @default(autoincrement())
+  status    String   @default("ok")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("health_check")
+}
+
+model ActivityLog {
+  id        String         @id @default(cuid())
+  userId    String    // User who performed the action
+  action    ActivityAction    // What action was performed
+  metadata  Json?
+  ipAddress String    // IP address for security tracking
+  userAgent String    // Browser/device info (can be long)
+  createdAt DateTime       @default(now())
+
+  // CASCADE delete when user account deleted (remove their activity history)
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])     // Fast lookup of user's activity
+  @@index([action])     // Filter by action type
+  @@index([createdAt])  // Sort chronologically
+  @@index([ipAddress])  // Suspicious activity detection (same IP check)
+
+  // Composite indexes for common query patterns
+  @@index([userId, createdAt])         // User activity history timeline
+  @@index([action, createdAt])         // Action-specific analytics over time
+  @@index([userId, action])            // User's specific action history
+  @@index([ipAddress, createdAt])      // IP-based suspicious activity detection
+}
+
+model SupportNote {
+  id        String       @id @default(cuid())
+  userId    String    // Customer the note is about
+  adminId   String
+  category  NoteCategory    // Type of note (ISSUE, RESOLUTION, etc.)
+  content   String
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  // Admin relation: RESTRICT delete when admin account deleted (preserve institutional knowledge)
+  admin     User         @relation("AdminSupportNotes", fields: [adminId], references: [id])
+
+  // Customer relation: CASCADE delete when customer account deleted (GDPR compliance)
+  user      User         @relation("UserSupportNotes", fields: [userId], references: [id], onDelete: Cascade)
+
+  
+
+  @@index([userId])   // Fast lookup of all notes for a user
+  @@index([adminId])    // Find all notes written by an admin
+  @@index([category])   // Filter notes by category
+  @@index([createdAt])    // Sort notes chronologically
+  @@index([userId, category, createdAt]) // Composite index for common query: recent notes for a user by category
+}
+
+model User {
+  id                  String              @id @default(cuid())
+  email               String              @unique
+  emailVerified       DateTime?           @map("email_verified")
+  name                String?
+  role                Role                @default(USER)
+  createdAt           DateTime            @default(now()) @map("created_at")
+  updatedAt           DateTime            @updatedAt @map("updated_at")
+  passwordHash        String?             @map("password_hash")
+  resetToken          String?             @map("reset_token")
+  resetTokenExpiry    DateTime?           @map("reset_token_expiry")
+  lastPasswordChange  DateTime?           @map("last_password_change")
+
+  // ======================================
+  // Account Suspension Fields
+  // ======================================
+  suspended           Boolean             @default(false)
+  suspendedAt         DateTime?
+  suspensionReason    String?
+
+  // Activity Logs (Task 4)
+  activityLogs ActivityLog[]
+
+
+  // E-commerce admin relations
+  adminNotes          OrderNote[]
+  orderStatusChanges  OrderStatusChange[] @relation("AdminStatusChanges")
+
+  // Support Notes - Self-referential relations
+  supportNotesAsAdmin SupportNote[]       @relation("AdminSupportNotes")
+  supportNotesAsUser  SupportNote[]       @relation("UserSupportNotes")
+
+  // NextAuth.js required relations 
+  accounts            Account[]
+
+  // E-commerce relations
+  cartItems           CartItem[]
+  orders              Order[]
+  reviews             Review[]
+
+
+  // ======================================
+  // Indexes for Query Optimization
+  // ======================================
+
+  @@index([email])      // Fast email lookup for login
+  @@index([name])
+  @@index([role])       // Filter users by role (admin queries)
+  @@index([suspended])  // Filter by suspension status
+  @@index([createdAt])  // Registration trends analytics (Task 5)
+
+  // Composite index for common query: active admins
+  @@index([role, suspended]) // Find active admins efficiently
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String  @map("user_id")
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@map("accounts")
+}
+
+model Category {
+  id          String     @id @default(cuid())
+  name        String
+  slug        String     @unique
+  description String?
+  imageUrl    String?    @map("image_url")
+  parentId    String?    @map("parent_id")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+  parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryHierarchy")
+  products    Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id           String        @id @default(cuid())
+  name         String
+  slug         String        @unique
+  description  String?
+  price        Int
+  comparePrice Int?          @map("compare_price")
+  inventory    Int           @default(0)
+  images       String[]
+  status       ProductStatus @default(ACTIVE)
+  categoryId   String        @map("category_id")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+  sku          String        @unique
+  cartItems    CartItem[]
+  orderItems   OrderItem[]
+  category     Category      @relation(fields: [categoryId], references: [id])
+  reviews      Review[]
+
+  @@index([categoryId])
+  @@index([slug])
+  @@index([status])
+  @@index([sku])
+  @@map("products")
+}
+
+model OrderNote {
+  id         String   @id @default(cuid())
+  orderId    String
+  adminId    String
+  content    String
+  isInternal Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  admin      User     @relation(fields: [adminId], references: [id])
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([adminId])
+  @@index([createdAt])
+}
+
+model OrderStatusChange {
+  id             String       @id @default(cuid())
+  orderId        String
+  previousStatus OrderStatus?
+  newStatus      OrderStatus
+  changedBy      String?
+  notes          String?
+  createdAt      DateTime     @default(now())
+  changedByUser  User?        @relation("AdminStatusChanges", fields: [changedBy], references: [id])
+  order          Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([createdAt])
+}
+
+model Order {
+  id                    String              @id @default(cuid())
+  orderNumber           String              @unique @map("order_number")
+  userId                String              @map("user_id")
+  status                OrderStatus         @default(PENDING)
+  subtotal              Int
+  tax                   Int                 @default(0)
+  shipping              Int                 @default(0)
+  total                 Int
+  stripePaymentIntentId String?             @map("stripe_payment_intent_id")
+  shippingAddress       Json                @map("shipping_address")
+  createdAt             DateTime            @default(now()) @map("created_at")
+  updatedAt             DateTime            @updatedAt @map("updated_at")
+  estimatedDelivery     DateTime?           @map("estimated_delivery")
+  shippingCarrier       String?             @map("shipping_carrier")
+  trackingNumber        String?             @map("tracking_number")
+  refundAmount          Int?                @map("refund_amount")
+  refundReason          String?             @map("refund_reason")
+  refundedAt            DateTime?           @map("refunded_at")
+  notes                 OrderNote[]
+  statusHistory         OrderStatusChange[]
+  orderItems            OrderItem[]
+  user                  User                @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+  @@index([orderNumber])
+  @@index([createdAt])
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String  @map("order_id")
+  productId String  @map("product_id")
+  quantity  Int
+  price     Int
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id])
+
+  @@index([orderId])
+  @@index([productId])
+  @@map("order_items")
+}
+
+model CartItem {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  productId String   @map("product_id")
+  quantity  Int
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@index([userId])
+  @@map("cart_items")
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  productId String   @map("product_id")
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@index([productId])
+  @@index([rating])
+  @@map("reviews")
+}
+
+model WebhookEvent {
+  id              String   @id @default(cuid())
+  stripeEventId   String   @unique @map("stripe_event_id")
+  eventType       String   @map("event_type")
+  processed       Boolean  @default(false)
+  processingError String?  @map("processing_error")
+  payload         Json
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@index([stripeEventId])
+  @@index([eventType])
+  @@index([processed])
+  @@map("webhook_events")
+}
+
+// ============================================================================
+// ENUMS - All enumeration types for type safety
+// ============================================================================
+
+
 enum Role {
   USER
   ADMIN
@@ -28,322 +330,27 @@ enum OrderStatus {
 }
 
 enum NoteCategory {
-  ISSUE
-  RESOLUTION
-  FOLLOW_UP
-  GENERAL
+  ISSUE       // Problem reported by user
+  RESOLUTION  // Problem solved
+  FOLLOW_UP   // Follow-up communication
+  GENERAL     // General notes
 }
 
 enum ActivityAction {
+  // Authentication events
   LOGIN
   LOGIN_FAILED
   LOGOUT
+
+  // Profile events
   PROFILE_UPDATED
   PASSWORD_CHANGED
+
+  // Order events
   ORDER_CREATED
+
+  // Admin actions
   ROLE_CHANGED
   ACCOUNT_SUSPENDED
   ACCOUNT_ACTIVATED
-}
-
-
-model HealthCheck {
-  id        Int      @id @default(autoincrement())
-  status    String   @default("ok")
-  createdAt DateTime @default(now()) @map("created_at")
-
-  @@map("health_check")
-}
-
-// Add ActivityLog model
-model ActivityLog {
-  id        String         @id @default(cuid())
-  userId    String
-  action    ActivityAction
-  metadata  Json?          // Flexible JSON for action-specific details
-  ipAddress String
-  userAgent String         @db.Text // User agent can be long
-  createdAt DateTime       @default(now())
-
-  // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([action])
-  @@index([createdAt])
-  @@index([ipAddress]) // For detecting actions from same IP
-}
-
-model SupportNote {
-  id        String        @id @default(cuid())
-  userId    String        // Customer the note is about
-  adminId   String        // Admin who created the note
-  category  NoteCategory
-  content   String        @db.Text // Use Text for longer content
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
-
-  // Relations
-  user  User @relation("UserSupportNotes", fields: [userId], references: [id], onDelete: Cascade)
-  admin User @relation("AdminSupportNotes", fields: [adminId], references: [id], onDelete: Restrict)
-
-  @@index([userId])
-  @@index([createdAt])
-  @@index([category])
-}
-
-// Core User model for authentication and user management
-model User {
-  id                 String    @id @default(cuid())
-  email              String    @unique
-  passwordHash       String?   @map("password_hash")
-  lastPasswordChange DateTime? @map("last_password_change")
-  emailVerified      DateTime? @map("email_verified")
-  name               String?
-  role               Role      @default(USER)
-  resetToken         String?   @map("reset_token")
-  resetTokenExpiry   DateTime? @map("reset_token_expiry")
-  createdAt          DateTime  @default(now()) @map("created_at")
-  updatedAt          DateTime  @updatedAt @map("updated_at")
-
-  // Account suspension fields
-  suspended         Boolean   @default(false)
-  suspendedAt       DateTime?
-  suspensionReason  String?
-
-  // Relationships
-  accounts           Account[]
-  orders             Order[]
-  cartItems          CartItem[]
-  reviews            Review[]
-  adminNotes         OrderNote[]
-  orderStatusChanges OrderStatusChange[] @relation("AdminStatusChanges")
-  supportNotesAsUser SupportNote[] @relation("UserSupportNotes")
-  supportNotesAsAdmin SupportNote[] @relation("AdminSupportNotes")
-  activityLogs        ActivityLog[]
-
-  @@index([email]) // Fast email search
-  @@index([name]) // Fast name search (if supported by DB)
-  @@index([suspended]) // Index for efficient filtering by suspension status
-  @@map("users")
-}
-
-// NextAuth.js required models
-model Account {
-  id                String  @id @default(cuid())
-  userId            String  @map("user_id")
-  type              String
-  provider          String
-  providerAccountId String  @map("provider_account_id")
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String? @db.Text
-  session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([provider, providerAccountId])
-  @@map("accounts")
-}
-
-// Authentication will use JWT + Redis caching instead of database sessions
-
-// E-commerce Category model with hierarchical support
-model Category {
-  id          String   @id @default(cuid())
-  name        String
-  slug        String   @unique
-  description String?
-  imageUrl    String?  @map("image_url")
-  parentId    String?  @map("parent_id")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-
-  // Self-referential relationships for hierarchical categories
-  parent   Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
-  children Category[] @relation("CategoryHierarchy")
-
-  // Products in this category
-  products Product[]
-
-  @@map("categories")
-}
-
-// Product model for e-commerce catalog
-model Product {
-  id           String        @id @default(cuid())
-  name         String
-  slug         String        @unique
-  sku          String        @unique
-  description  String?
-  price        Int // Stored in cents for precision
-  comparePrice Int?          @map("compare_price") // Optional compare-at price
-  inventory    Int           @default(0)
-  images       String[] // Array of image URLs
-  status       ProductStatus @default(ACTIVE)
-  categoryId   String        @map("category_id")
-  createdAt    DateTime      @default(now()) @map("created_at")
-  updatedAt    DateTime      @updatedAt @map("updated_at")
-
-  // Relationships
-  category   Category    @relation(fields: [categoryId], references: [id])
-  orderItems OrderItem[]
-  cartItems  CartItem[]
-  reviews    Review[]
-
-  // Indexes for performance
-  @@index([categoryId])
-  @@index([slug])
-  @@index([status])
-  @@index([sku])
-  @@map("products")
-}
-
-model OrderNote {
-  id         String   @id @default(cuid())
-  orderId    String
-  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  adminId    String
-  admin      User     @relation(fields: [adminId], references: [id])
-  content    String   @db.Text
-  isInternal Boolean  @default(true) // true = internal note, false = customer-visible
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  @@index([orderId])
-  @@index([adminId])
-  @@index([createdAt])
-}
-
-model OrderStatusChange {
-  id             String       @id @default(cuid())
-  orderId        String
-  order          Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  previousStatus OrderStatus?
-  newStatus      OrderStatus
-  changedBy      String? // Admin user ID
-  changedByUser  User?        @relation("AdminStatusChanges", fields: [changedBy], references: [id])
-  notes          String?      @db.Text
-  createdAt      DateTime     @default(now())
-
-  @@index([orderId])
-  @@index([createdAt])
-}
-
-// Order model for purchase tracking
-model Order {
-  id                    String      @id @default(cuid())
-  orderNumber           String      @unique @map("order_number") // Human-readable order number
-  userId                String      @map("user_id")
-  status                OrderStatus @default(PENDING)
-  subtotal              Int // Amount in cents
-  tax                   Int         @default(0) // Tax amount in cents
-  shipping              Int         @default(0) // Shipping cost in cents
-  total                 Int // Total amount in cents
-  stripePaymentIntentId String?     @map("stripe_payment_intent_id")
-
-  // Shipping address stored as JSON for flexibility
-  shippingAddress Json @map("shipping_address")
-
-  // Shipping tracking information
-  trackingNumber    String?   @map("tracking_number")
-  shippingCarrier   String?   @map("shipping_carrier")
-  estimatedDelivery DateTime? @map("estimated_delivery")
-
-  // Refund tracking
-  refundAmount Int?      @map("refund_amount") // Amount refunded in cents
-  refundReason String?   @map("refund_reason") // Reason for refund
-  refundedAt   DateTime? @map("refunded_at") // When refund was processed
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  // Relationships
-  user          User                @relation(fields: [userId], references: [id])
-  orderItems    OrderItem[]
-  notes         OrderNote[]
-  statusHistory OrderStatusChange[]
-
-  @@index([userId]) // Faster user lookup
-  @@index([status]) // Faster status filter
-  @@index([orderNumber]) // Faster order number lookup
-  @@index([createdAt]) // Faster date sorting
-  @@map("orders")
-}
-
-// Order items for tracking products in orders
-model OrderItem {
-  id        String @id @default(cuid())
-  orderId   String @map("order_id")
-  productId String @map("product_id")
-  quantity  Int
-  price     Int // Historical price at time of order (in cents)
-
-  // Relationships
-  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id])
-
-  @@index([orderId])
-  @@index([productId])
-  @@map("order_items")
-}
-
-// Shopping cart persistence
-model CartItem {
-  id        String   @id @default(cuid())
-  userId    String   @map("user_id")
-  productId String   @map("product_id")
-  quantity  Int
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  // Relationships
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-  // Unique constraint to prevent duplicate cart items
-  @@unique([userId, productId])
-  @@index([userId])
-  @@map("cart_items")
-}
-
-// Product reviews for customer feedback
-model Review {
-  id        String   @id @default(cuid())
-  userId    String   @map("user_id")
-  productId String   @map("product_id")
-  rating    Int // 1-5 star rating
-  comment   String?
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  // Relationships
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-  // User can only review each product once
-  @@unique([userId, productId])
-  @@index([productId])
-  @@index([rating])
-  @@map("reviews")
-}
-
-// Webhook event tracking for idempotency
-model WebhookEvent {
-  id              String   @id @default(cuid())
-  stripeEventId   String   @unique @map("stripe_event_id") // Stripe's event ID
-  eventType       String   @map("event_type") // e.g., payment_intent.succeeded
-  processed       Boolean  @default(false)
-  processingError String?  @map("processing_error") @db.Text
-  payload         Json // Store the full event payload for debugging
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
-
-  @@index([stripeEventId])
-  @@index([eventType])
-  @@index([processed])
-  @@map("webhook_events")
 }

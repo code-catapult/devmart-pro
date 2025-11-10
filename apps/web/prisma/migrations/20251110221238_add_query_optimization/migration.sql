@@ -1,0 +1,2 @@
+-- Migration manually restored after accidental deletion.
+-- Database already contains the applied changes.
