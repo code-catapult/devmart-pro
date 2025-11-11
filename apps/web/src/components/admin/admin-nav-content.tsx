@@ -13,6 +13,7 @@ import {
   StoreIcon,
   FolderTree,
   BarChart3,
+  DollarSign,
 } from 'lucide-react'
 import { signOut } from 'next-auth/react'
 import { Route } from 'next'
@@ -39,7 +40,8 @@ export function AdminNavContent({ user, onNavigate }: AdminNavContentProps) {
     { label: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
     { label: 'Products', href: '/admin/products', icon: Package },
     { label: 'Orders', href: '/admin/orders', icon: ShoppingCart },
-    { label: 'Customers', href: '/admin/customers', icon: Users },
+    { label: 'Users', href: '/admin/users', icon: Users },
+    { label: 'Customers', href: '/admin/customers', icon: DollarSign },
     { label: 'Categories', href: '/admin/categories', icon: FolderTree },
     { label: 'Store', href: '/products', icon: StoreIcon },
     { label: 'Analytics', href: '/admin/analytics', icon: BarChart3 },

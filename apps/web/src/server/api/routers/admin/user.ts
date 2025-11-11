@@ -13,7 +13,7 @@ import { userAdminService } from '../../../services/UserAdminService'
 import { auditLogService } from '../../../services/AuditLogService'
 import { supportService } from '../../../services/SupportService'
 
-export const userRouter = createTRPCRouter({
+export const userManagementRouter = createTRPCRouter({
   /**
    * Get paginated user list with search, filters, and sorting
    * Returns users with computed stats: orderCount, totalSpent
