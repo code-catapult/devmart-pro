@@ -1,4 +1,5 @@
 import { createTRPCRouter, adminProcedure } from '~/server/api/trpc'
+import { TRPCError } from '@trpc/server'
 import {
   activateAccountSchema,
   getSupportNotesSchema,
@@ -38,13 +39,17 @@ export const userManagementRouter = createTRPCRouter({
   getUserById: adminProcedure
     .input(userProfileSchema)
     .query(async ({ input }) => {
-      const user = await userAdminService.getUserProfile(input.id)
+      // Use enhanced service method for parallel fetching
+      const profileData = await userAdminService.getUserProfile(input.id)
 
-      if (!user) {
-        throw new Error('User not found')
+      if (!profileData) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'User not found',
+        })
       }
 
-      return user
+      return profileData
     }),
 
   /**

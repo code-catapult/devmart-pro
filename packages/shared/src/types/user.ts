@@ -83,3 +83,66 @@ export interface UserListResponse {
     totalPages: number; // Total pages available
   };
 }
+
+/**
+ * User Profile Types
+ *
+ * These types define the aggregated data structure for the user profile page.
+ */
+
+export interface UserProfile {
+  id: string;
+  name: string | null;
+  email: string;
+  role: "USER" | "ADMIN";
+  suspended: boolean;
+  suspendedAt: Date | null;
+  suspensionReason: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface UserStats {
+  totalOrders: number;
+  completedOrders: number;
+  cancelledOrders: number;
+  totalSpent: number;
+  averageOrderValue: number;
+  lastOrderDate: Date | null;
+  accountAge: number; // Days since account creation
+}
+
+export interface OrderSummary {
+  id: string;
+  orderNumber: string;
+  status: "PENDING" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED";
+  total: number;
+  itemCount: number;
+  createdAt: Date;
+}
+
+export interface ActivityLogEntry {
+  id: string;
+  action: string;
+  metadata: Record<string, unknown> | null;
+  ipAddress: string;
+  userAgent: string;
+  createdAt: Date;
+}
+
+export interface SupportNoteItem {
+  id: string;
+  content: string;
+  adminId: string;
+  category: "ISSUE" | "RESOLUTION" | "FOLLOW_UP" | "GENERAL";
+  adminName: string;
+  createdAt: Date;
+}
+
+export interface UserProfileData {
+  user: UserProfile;
+  stats: UserStats;
+  recentOrders: OrderSummary[];
+  recentActivity: ActivityLogEntry[];
+  supportNotes: SupportNoteItem[];
+}
