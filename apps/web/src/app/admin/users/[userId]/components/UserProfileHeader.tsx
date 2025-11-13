@@ -8,9 +8,11 @@ import {
   ShoppingCart,
   AlertCircle,
 } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import type { UserProfile, UserStats } from '@repo/shared/types'
 import { formatCurrency } from '@repo/shared/utils'
 import { RoleManager } from './RoleManager'
+import { SuspensionManager } from './SuspensionManager'
 import { useState } from 'react'
 
 /**
@@ -41,13 +43,16 @@ interface UserProfileHeaderProps {
 }
 
 export function UserProfileHeader({ user, stats }: UserProfileHeaderProps) {
+  const router = useRouter()
   const [userRole, setUserRole] = useState(user.role)
+  const [suspended, setSuspended] = useState(user.suspended)
+
   return (
     <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
       {/* ============================================ */}
       {/* SUSPENDED BANNER (if applicable) */}
       {/* ============================================ */}
-      {user.suspended && (
+      {suspended && (
         <div className="bg-red-50 border-b border-red-200 px-4 py-3 sm:px-6 sm:py-4">
           <div className="flex items-start gap-2 sm:items-center sm:gap-3">
             <AlertCircle className="h-5 w-5 text-red-600 shrink-0 mt-0.5 sm:mt-0" />
@@ -192,6 +197,23 @@ export function UserProfileHeader({ user, stats }: UserProfileHeaderProps) {
               </p>
             </div>
           </div>
+        </div>
+        <div className="mt-6">
+          <SuspensionManager
+            userId={user.id}
+            userName={user.name || user.email}
+            suspended={suspended}
+            suspensionReason={user.suspensionReason}
+            suspensionNotes={user.suspensionNotes}
+            suspendedAt={user.suspendedAt}
+            onStatusChanged={(newSuspendedStatus) => {
+              // Immediate UI update for instant feedback
+              setSuspended(newSuspendedStatus)
+
+              // Sync with server to update all suspension details
+              router.refresh()
+            }}
+          />
         </div>
       </div>
     </div>

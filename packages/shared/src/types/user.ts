@@ -98,6 +98,7 @@ export interface UserProfile {
   suspended: boolean;
   suspendedAt: Date | null;
   suspensionReason: string | null;
+  suspensionNotes: string | null;
   createdAt: Date;
   updatedAt: Date;
 }

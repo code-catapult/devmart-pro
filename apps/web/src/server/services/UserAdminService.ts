@@ -83,6 +83,7 @@ export class UserAdminService {
       suspended: user.suspended,
       suspendedAt: user.suspendedAt,
       suspensionReason: user.suspensionReason,
+      suspensionNotes: user.suspensionNotes,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
       orderCount: user._count.orders,
@@ -222,6 +223,7 @@ export class UserAdminService {
         suspended: user.suspended,
         suspendedAt: user.suspendedAt,
         suspensionReason: user.suspensionReason,
+        suspensionNotes: user.suspensionNotes,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       },
@@ -318,8 +320,7 @@ export class UserAdminService {
         suspended: true,
         suspendedAt: new Date(),
         suspensionReason: reason,
-        // Store admin notes in a JSON field if available, or in suspensionReason
-        ...(notes && { suspensionReason: `${reason}: ${notes}` }),
+        suspensionNotes: notes ?? null,
       },
     })
     return suspendedUser
@@ -338,6 +339,7 @@ export class UserAdminService {
         suspended: false,
         suspendedAt: null,
         suspensionReason: null,
+        suspensionNotes: null,
       },
     })
   }

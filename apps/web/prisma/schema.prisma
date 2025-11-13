@@ -82,6 +82,7 @@ model User {
   suspended           Boolean             @default(false)
   suspendedAt         DateTime?
   suspensionReason    String?
+  suspensionNotes     String?
 
   // Activity Logs (Task 4)
   activityLogs ActivityLog[]

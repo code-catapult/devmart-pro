@@ -434,7 +434,15 @@ export const userRoleSchema = z.object({
 
 export const suspendAccountSchema = z.object({
   userId: z.cuid('Invalid user ID'),
-  reason: z.enum(['FRAUD', 'ABUSE', 'PAYMENT_ISSUES', 'OTHER']),
+  reason: z.enum([
+    'POLICY_VIOLATION',
+    'FRAUD',
+    'SPAM',
+    'CHARGEBACKS',
+    'SECURITY',
+    'REQUESTED',
+    'OTHER',
+  ]),
   notes: z.string().optional(),
 })
 
