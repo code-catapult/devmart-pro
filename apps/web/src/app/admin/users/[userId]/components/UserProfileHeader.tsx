@@ -10,6 +10,8 @@ import {
 } from 'lucide-react'
 import type { UserProfile, UserStats } from '@repo/shared/types'
 import { formatCurrency } from '@repo/shared/utils'
+import { RoleManager } from './RoleManager'
+import { useState } from 'react'
 
 /**
  * UserProfileHeader Component
@@ -39,6 +41,7 @@ interface UserProfileHeaderProps {
 }
 
 export function UserProfileHeader({ user, stats }: UserProfileHeaderProps) {
+  const [userRole, setUserRole] = useState(user.role)
   return (
     <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
       {/* ============================================ */}
@@ -106,13 +109,22 @@ export function UserProfileHeader({ user, stats }: UserProfileHeaderProps) {
                   {user.role}
                 </span>
               </div>
-
               {/* Email */}
               <div className="mt-2 flex items-start sm:items-center gap-2 text-gray-600">
                 <Mail className="h-4 w-4 shrink-0 mt-0.5 sm:mt-0" />
                 <span className="text-sm break-all">{user.email}</span>
               </div>
-
+              <div className="mt-4">
+                <RoleManager
+                  userId={user.id}
+                  userName={user.name || user.email}
+                  currentRole={userRole}
+                  onRoleChanged={(newRole) => {
+                    setUserRole(newRole)
+                    // Optionally refresh page data
+                  }}
+                />
+              </div>
               {/* Join Date */}
               <div className="mt-1 flex items-start sm:items-center gap-2 text-gray-600">
                 <Calendar className="h-4 w-4 shrink-0 mt-0.5 sm:mt-0" />
