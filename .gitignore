@@ -79,3 +79,5 @@ ip-useragent-tracking.md
 client-server-fetching-setup.md
 ssr-vs-csr-guide.md
 service-interface-guidelines.md
+usememo-usecase.md
+analytics-dashboard-context.md

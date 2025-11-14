@@ -161,90 +161,42 @@ export class UserAnalyticsService {
   }
 
   /**
-   * Segment users by behavior and value
+   * Segment users by behavior only (activity and registration age)
    *
-   * @returns User segmentation breakdown
+   * NOTE: Revenue-based segmentation (order count, total spent) has been
+   * moved to RevenueAnalyticsService to maintain clear separation of concerns.
+   *
+   * @returns User segmentation breakdown by activity and registration age
    */
   async getUserSegmentation() {
-    // Get all users with their order data
+    const now = new Date()
+    const sevenDaysAgo = subDays(now, 7)
+    const thirtyDaysAgo = subDays(now, 30)
+    const ninetyDaysAgo = subDays(now, 90)
+
+    // Get all users with registration date
     const users = await prisma.user.findMany({
-      include: {
-        orders: {
-          where: {
-            status: 'DELIVERED', // Only completed orders for revenue
-          },
-          select: {
-            total: true,
-          },
-        },
-        _count: {
-          select: {
-            orders: true,
-          },
-        },
+      select: {
+        id: true,
+        createdAt: true,
       },
     })
 
     // Calculate segments
     const segments = {
-      byOrderCount: {
-        '0 orders (never purchased)': 0,
-        '1-5 orders (occasional)': 0,
-        '6-10 orders (regular)': 0,
-        '11+ orders (loyal)': 0,
-      },
-      byTotalSpent: {
-        '$0 (no purchases)': 0,
-        '$1-$99': 0,
-        '$100-$499': 0,
-        '$500-$999': 0,
-        '$1000+': 0,
-      },
       byActivity: {
         active: 0, // Logged in last 7 days
         occasional: 0, // Logged in 8-30 days ago
         inactive: 0, // Not logged in 30+ days
       },
+      byRegistrationAge: {
+        new: 0, // Registered < 30 days
+        established: 0, // Registered 30-90 days
+        veteran: 0, // Registered 90+ days
+      },
     }
 
     // Get recent login data for activity segmentation
-    const sevenDaysAgo = subDays(new Date(), 7)
-    const thirtyDaysAgo = subDays(new Date(), 30)
-
-    for (const user of users) {
-      const orderCount = user._count.orders
-      const totalSpent = user.orders.reduce(
-        (sum, order) => sum + order.total,
-        0
-      )
-
-      // Segment by order count
-      if (orderCount === 0) {
-        segments.byOrderCount['0 orders (never purchased)']++
-      } else if (orderCount <= 5) {
-        segments.byOrderCount['1-5 orders (occasional)']++
-      } else if (orderCount <= 10) {
-        segments.byOrderCount['6-10 orders (regular)']++
-      } else {
-        segments.byOrderCount['11+ orders (loyal)']++
-      }
-
-      // Segment by total spent (in cents, so divide by 100 for dollars)
-      const totalDollars = totalSpent / 100
-      if (totalDollars === 0) {
-        segments.byTotalSpent['$0 (no purchases)']++
-      } else if (totalDollars < 100) {
-        segments.byTotalSpent['$1-$99']++
-      } else if (totalDollars < 500) {
-        segments.byTotalSpent['$100-$499']++
-      } else if (totalDollars < 1000) {
-        segments.byTotalSpent['$500-$999']++
-      } else {
-        segments.byTotalSpent['$1000+']++
-      }
-    }
-
-    // Activity segmentation (requires activity log query)
     const recentLogins = await prisma.activityLog.findMany({
       where: {
         action: 'LOGIN',
@@ -266,7 +218,9 @@ export class UserAnalyticsService {
       recentLogins.map((log) => [log.userId, log.createdAt])
     )
 
+    // Segment users by activity and registration age
     for (const user of users) {
+      // Activity segmentation
       const lastLogin = recentLoginMap.get(user.id)
 
       if (!lastLogin) {
@@ -275,6 +229,15 @@ export class UserAnalyticsService {
         segments.byActivity.active++
       } else {
         segments.byActivity.occasional++
+      }
+
+      // Registration age segmentation
+      if (user.createdAt >= thirtyDaysAgo) {
+        segments.byRegistrationAge.new++
+      } else if (user.createdAt >= ninetyDaysAgo) {
+        segments.byRegistrationAge.established++
+      } else {
+        segments.byRegistrationAge.veteran++
       }
     }
 
@@ -296,6 +259,7 @@ export class UserAnalyticsService {
     const allUsers = await prisma.user.findMany({
       select: {
         id: true,
+        name: true,
         email: true,
         createdAt: true,
       },
@@ -327,7 +291,9 @@ export class UserAnalyticsService {
 
     const atRiskUsers: Array<{
       userId: string
+      name: string | null
       email: string
+      lastLogin: Date
       daysSinceLastLogin: number
     }> = []
 
@@ -349,7 +315,9 @@ export class UserAnalyticsService {
         churnCategories['At risk (30-60 days)']++
         atRiskUsers.push({
           userId: user.id,
+          name: user.name,
           email: user.email,
+          lastLogin: lastLogin,
           daysSinceLastLogin: daysSinceLogin,
         })
       } else if (lastLogin >= ninetyDaysAgo) {
@@ -374,73 +342,22 @@ export class UserAnalyticsService {
   }
 
   /**
-   * Get top customers by revenue and order frequency
+   * NOTE: getTopCustomers() method has been REMOVED.
    *
-   * @param limit Number of customers to return
-   * @returns Top customers ranked by total spent
+   * This revenue-focused functionality now belongs in RevenueAnalyticsService
+   * to maintain clear separation of concerns:
+   * - UserAnalyticsService: User behavior and lifecycle metrics
+   * - RevenueAnalyticsService: Order and revenue metrics
+   *
+   * See RevenueAnalyticsService.getTopCustomers() in Task 11.
    */
-  async getTopCustomers(limit: number = 20) {
-    const users = await prisma.user.findMany({
-      include: {
-        orders: {
-          where: {
-            status: 'DELIVERED',
-          },
-          select: {
-            total: true,
-            createdAt: true,
-          },
-        },
-        _count: {
-          select: {
-            orders: true,
-          },
-        },
-      },
-    })
-
-    // Calculate metrics for each user
-    const usersWithMetrics = users
-      .map((user) => {
-        const totalSpent = user.orders.reduce(
-          (sum, order) => sum + order.total,
-          0
-        )
-        const orderCount = user._count.orders
-
-        // Calculate average order value
-        const avgOrderValue = orderCount > 0 ? totalSpent / orderCount : 0
-
-        // Calculate recency (days since last order)
-        const lastOrderDate =
-          user.orders.length > 0
-            ? Math.max(...user.orders.map((o) => o.createdAt.getTime()))
-            : null
-
-        const daysSinceLastOrder = lastOrderDate
-          ? Math.floor((Date.now() - lastOrderDate) / (1000 * 60 * 60 * 24))
-          : null
-
-        return {
-          userId: user.id,
-          email: user.email,
-          name: user.name,
-          totalSpent,
-          orderCount,
-          avgOrderValue,
-          daysSinceLastOrder,
-        }
-      })
-      .filter((user) => user.totalSpent > 0) // Only users who have purchased
-      .sort((a, b) => b.totalSpent - a.totalSpent) // Sort by total spent descending
-      .slice(0, limit)
-
-    return usersWithMetrics
-  }
 
   /**
    * Get analytics summary dashboard
    * Combines key metrics for overview display
+   *
+   * NOTE: This method now returns only user-focused metrics.
+   * Revenue metrics (like topCustomers) are available via RevenueAnalyticsService.
    *
    * @returns Summary metrics object
    */
@@ -449,41 +366,33 @@ export class UserAnalyticsService {
     const thirtyDaysAgo = subDays(now, 30)
     const sixtyDaysAgo = subDays(now, 60)
 
-    const [
-      totalUsers,
-      newUsersThisMonth,
-      newUsersLastMonth,
-      activityPatterns,
-      topCustomers,
-    ] = await Promise.all([
-      // Total registered users
-      prisma.user.count(),
+    const [totalUsers, newUsersThisMonth, newUsersLastMonth, activityPatterns] =
+      await Promise.all([
+        // Total registered users
+        prisma.user.count(),
 
-      // New users this month
-      prisma.user.count({
-        where: {
-          createdAt: {
-            gte: startOfDay(thirtyDaysAgo),
+        // New users this month
+        prisma.user.count({
+          where: {
+            createdAt: {
+              gte: startOfDay(thirtyDaysAgo),
+            },
           },
-        },
-      }),
+        }),
 
-      // New users last month (for comparison)
-      prisma.user.count({
-        where: {
-          createdAt: {
-            gte: startOfDay(sixtyDaysAgo),
-            lt: startOfDay(thirtyDaysAgo),
+        // New users last month (for comparison)
+        prisma.user.count({
+          where: {
+            createdAt: {
+              gte: startOfDay(sixtyDaysAgo),
+              lt: startOfDay(thirtyDaysAgo),
+            },
           },
-        },
-      }),
+        }),
 
-      // Activity patterns
-      this.getActivityPatterns(),
-
-      // Top 5 customers
-      this.getTopCustomers(5),
-    ])
+        // Activity patterns
+        this.getActivityPatterns(),
+      ])
 
     // Calculate growth rate
     const growthRate =
@@ -497,7 +406,6 @@ export class UserAnalyticsService {
       growthRate,
       activeUsers: activityPatterns.activeLastMonth,
       activityRate: activityPatterns.activityRate.monthly,
-      topCustomers,
     }
   }
 }
