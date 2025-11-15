@@ -400,6 +400,10 @@ export const userProfileSchema = z.object({
   id: z.cuid('Invalid ID'),
 })
 
+export const userIdSchema = z.object({
+  userId: z.cuid('Invalid ID'),
+})
+
 export const getSupportNotesSchema = z.object({
   userId: z.cuid('Invalid user ID'),
   category: z
@@ -454,4 +458,16 @@ export const addSupportNotesSchema = z.object({
   userId: z.cuid('Invalid user ID'),
   category: z.enum(['ISSUE', 'RESOLUTION', 'FOLLOW_UP', 'GENERAL']),
   content: z.string().min(1).max(5000), // Reasonable length limit
+})
+
+export const exportUserListSchema = z.object({
+  format: z.enum(['csv', 'excel']),
+  columns: z.array(z.string()),
+  filters: z
+    .object({
+      search: z.string().optional(),
+      role: z.enum(['ALL', 'USER', 'ADMIN']).optional(),
+      status: z.enum(['ALL', 'ACTIVE', 'SUSPENDED']).optional(),
+    })
+    .optional(),
 })

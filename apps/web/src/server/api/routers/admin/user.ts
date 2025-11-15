@@ -9,10 +9,13 @@ import {
   getActivityLogSchema,
   userProfileSchema,
   userRoleSchema,
+  exportUserListSchema,
+  userIdSchema,
 } from './schema'
 import { userAdminService } from '../../../services/UserAdminService'
 import { auditLogService } from '../../../services/AuditLogService'
 import { supportService } from '../../../services/SupportService'
+import { userExportService } from '../../../services/UserExportService'
 
 export const userManagementRouter = createTRPCRouter({
   /**
@@ -76,6 +79,13 @@ export const userManagementRouter = createTRPCRouter({
         limit: input.limit,
       })
     }),
+
+  getExportColumns: adminProcedure.query(async () => {
+    /**
+     * Get available columns for export selection.
+     */
+    return userExportService.getAvailableColumns()
+  }),
 
   // ============================================================================
   // USER MANAGEMENT MUTATIONS
@@ -204,5 +214,53 @@ export const userManagementRouter = createTRPCRouter({
       })
 
       return note
+    }),
+
+  exportUserList: adminProcedure
+    .input(exportUserListSchema)
+    .mutation(async ({ input }) => {
+      /**
+       * Export user list in specified format.
+       *
+       * Returns base64-encoded data for download in browser.
+       */
+      const data = await userExportService.exportUserList(
+        input.format,
+        input.columns,
+        input.filters
+      )
+
+      // Convert to base64 for transmission
+      if (input.format === 'csv') {
+        return {
+          data: Buffer.from(data as string).toString('base64'),
+          filename: `users_${new Date().toISOString().split('T')[0]}.csv`,
+          mimeType: 'text/csv',
+        }
+      } else {
+        return {
+          data: (data as Buffer).toString('base64'),
+          filename: `users_${new Date().toISOString().split('T')[0]}.xlsx`,
+          mimeType:
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        }
+      }
+    }),
+
+  exportUserDataGDPR: adminProcedure
+    .input(userIdSchema)
+    .mutation(async ({ input }) => {
+      /**
+       * Export complete user data for GDPR compliance.
+       *
+       * Returns JSON data for download.
+       */
+      const data = await userExportService.exportUserDataGDPR(input.userId)
+
+      return {
+        data: Buffer.from(JSON.stringify(data, null, 2)).toString('base64'),
+        filename: `user_data_${input.userId}_${new Date().toISOString().split('T')[0]}.json`,
+        mimeType: 'application/json',
+      }
     }),
 })

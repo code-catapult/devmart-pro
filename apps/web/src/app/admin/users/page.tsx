@@ -8,6 +8,7 @@ import { SearchBar } from './components/SearchBar'
 import { FilterBar } from './components/FilterBar'
 import { Pagination } from './components/Pagination'
 import type { UserListFilters } from '@repo/shared/types'
+import { ExportButton } from './components/ExportButton'
 
 /**
  * User List Page - Server Component
@@ -189,14 +190,26 @@ export default async function UserListPage({ searchParams }: PageProps) {
        *
        * Example: "Showing 20 of 156 users"
        */}
-      <div className="mb-4 text-sm text-gray-600">
-        Showing {data.users.length} of {data.pagination.total} users
-        {filters.search && (
-          <span className="ml-1">
-            matching &quot;<span className="font-medium">{filters.search}</span>
-            &quot;
-          </span>
-        )}
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-2">
+        <div className="mb-4 text-sm text-gray-600">
+          Showing {data.users.length} of {data.pagination.total} users
+          {filters.search && (
+            <span className="ml-1">
+              matching &quot;
+              <span className="font-medium">{filters.search}</span>
+              &quot;
+            </span>
+          )}
+        </div>
+        <div className="">
+          <ExportButton
+            currentFilters={{
+              search: filters.search,
+              role: filters.role,
+              status: filters.status,
+            }}
+          />
+        </div>
       </div>
 
       {/* ============================================ */}
