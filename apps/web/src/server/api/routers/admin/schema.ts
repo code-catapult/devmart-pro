@@ -471,3 +471,17 @@ export const exportUserListSchema = z.object({
     })
     .optional(),
 })
+
+export const getRegistrationTrendSchema = z.object({
+  startDate: z.date().optional(),
+  endDate: z.date().optional(),
+  period: z.enum(['day', 'week', 'month']).default('day'),
+})
+
+export const getTopCustomersSchema = z.object({
+  limit: z.number().min(1).max(100).default(10),
+})
+
+export const getActivityPatternsDetailedSchema = z.object({
+  daysBack: z.number().min(1).max(365).default(30),
+})

@@ -11,11 +11,17 @@ import {
   userRoleSchema,
   exportUserListSchema,
   userIdSchema,
+  getRegistrationTrendSchema,
+  getTopCustomersSchema,
+  getActivityPatternsDetailedSchema,
 } from './schema'
+import { subDays } from 'date-fns'
 import { userAdminService } from '../../../services/UserAdminService'
 import { auditLogService } from '../../../services/AuditLogService'
 import { supportService } from '../../../services/SupportService'
 import { userExportService } from '../../../services/UserExportService'
+import { userAnalyticsService } from '../../../services/UserAnalyticsService'
+import { revenueAnalyticsService } from '../../../services/RevenueAnalyticsService'
 
 export const userManagementRouter = createTRPCRouter({
   /**
@@ -261,6 +267,199 @@ export const userManagementRouter = createTRPCRouter({
         data: Buffer.from(JSON.stringify(data, null, 2)).toString('base64'),
         filename: `user_data_${input.userId}_${new Date().toISOString().split('T')[0]}.json`,
         mimeType: 'application/json',
+      }
+    }),
+
+  /**
+   * User Analytics
+   *
+   */
+  getUserAnalyticsSummary: adminProcedure.query(async () => {
+    return await userAnalyticsService.getSummaryMetrics()
+  }),
+
+  /**
+   * Get registration trend data
+   * Time-series data for chart visualization
+   *
+   * NOTE: Uses UserAnalyticsService from Task 5
+   */
+  getRegistrationTrend: adminProcedure
+    .input(getRegistrationTrendSchema)
+    .query(async ({ input }) => {
+      const endDate = input.endDate || new Date()
+      const startDate = input.startDate || subDays(endDate, 30) // Default: last 30 days
+
+      return await userAnalyticsService.getRegistrationTrend(
+        startDate,
+        endDate,
+        input.period
+      )
+    }),
+
+  /**
+   * Get revenue-based user segmentation data
+   * Returns distribution across VIP/Active/Casual/Inactive segments
+   *
+   * NOTE: Uses RevenueAnalyticsService from Task 11 (revenue-based segmentation)
+   */
+  getRevenueSegmentation: adminProcedure.query(async () => {
+    const segments = await revenueAnalyticsService.getRevenueSegmentation()
+
+    // Transform to Task 13's expected format
+    return [
+      {
+        segment: 'VIP',
+        users: segments.byOrderCount['11+ orders (loyal)'],
+        color: '#8b5cf6',
+      },
+      {
+        segment: 'Active',
+        users: segments.byOrderCount['6-10 orders (regular)'],
+        color: '#3b82f6',
+      },
+      {
+        segment: 'Casual',
+        users: segments.byOrderCount['1-5 orders (occasional)'],
+        color: '#10b981',
+      },
+      {
+        segment: 'Inactive',
+        users: segments.byOrderCount['0 orders (never purchased)'],
+        color: '#6b7280',
+      },
+    ]
+  }),
+
+  /**
+   * Get top customers by lifetime value
+   * Returns highest-spending users
+   *
+   * NOTE: Uses RevenueAnalyticsService from Task 11 (revenue data)
+   */
+  getTopCustomers: adminProcedure
+    .input(getTopCustomersSchema)
+    .query(async ({ input }) => {
+      const customers = await revenueAnalyticsService.getTopCustomers(
+        input.limit
+      )
+
+      // Transform to expected format
+      return customers.map((customer) => ({
+        id: customer.userId,
+        name: customer.name || 'Unknown',
+        email: customer.email,
+        orderCount: customer.orderCount,
+        lifetimeValue: customer.totalSpent,
+      }))
+    }),
+
+  /**
+   * Get user activity patterns
+   * Returns login frequency distribution
+   *
+   * NOTE: Uses UserAnalyticsService from Task 5
+   */
+  getActivityPatterns: adminProcedure
+    .input(getActivityPatternsDetailedSchema)
+    .query(async ({ input }) => {
+      return await userAnalyticsService.getActivityPatternsDetailed(
+        input.daysBack
+      )
+    }),
+
+  /**
+   * Get churn analysis
+   * Returns at-risk and churned user counts
+   *
+   * NOTE: Uses UserAnalyticsService from Task 5
+   */
+  getChurnAnalysis: adminProcedure.query(async () => {
+    return await userAnalyticsService.getChurnAnalysisSimplified()
+  }),
+
+  /**
+   * Get all user analytics data in a single optimized query
+   * Consolidates multiple queries to reduce network overhead and improve performance
+   *
+   * Returns:
+   * - summary: Summary metrics (total, new, active, churn rate)
+   * - registrationTrend: Time-series registration data
+   * - segmentation: User segmentation pie chart data
+   * - topCustomers: Highest value customers
+   * - activityPatterns: Login frequency distribution
+   * - churnAnalysis: At-risk and churned user counts
+   */
+  getUserAnalyticsAll: adminProcedure
+    .input(getRegistrationTrendSchema)
+    .query(async ({ input }) => {
+      const endDate = input.endDate || new Date()
+      const startDate = input.startDate || subDays(endDate, 30)
+      const daysBack = Math.ceil(
+        (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+      )
+
+      // Execute all queries in parallel for optimal performance
+      const [
+        summary,
+        registrationTrend,
+        segments,
+        topCustomers,
+        activityPatterns,
+        churnAnalysis,
+      ] = await Promise.all([
+        userAnalyticsService.getSummaryMetrics(),
+        userAnalyticsService.getRegistrationTrend(
+          startDate,
+          endDate,
+          input.period
+        ),
+        revenueAnalyticsService.getRevenueSegmentation(),
+        revenueAnalyticsService.getTopCustomers(10),
+        userAnalyticsService.getActivityPatternsDetailed(daysBack),
+        userAnalyticsService.getChurnAnalysisSimplified(),
+      ])
+
+      // Transform segmentation to expected format
+      const segmentation = [
+        {
+          segment: 'VIP',
+          users: segments.byOrderCount['11+ orders (loyal)'],
+          color: '#8b5cf6',
+        },
+        {
+          segment: 'Active',
+          users: segments.byOrderCount['6-10 orders (regular)'],
+          color: '#3b82f6',
+        },
+        {
+          segment: 'Casual',
+          users: segments.byOrderCount['1-5 orders (occasional)'],
+          color: '#10b981',
+        },
+        {
+          segment: 'Inactive',
+          users: segments.byOrderCount['0 orders (never purchased)'],
+          color: '#6b7280',
+        },
+      ]
+
+      // Transform top customers to expected format
+      const transformedTopCustomers = topCustomers.map((customer) => ({
+        id: customer.userId,
+        name: customer.name || 'Unknown',
+        email: customer.email,
+        orderCount: customer.orderCount,
+        lifetimeValue: customer.totalSpent,
+      }))
+
+      return {
+        summary,
+        registrationTrend,
+        segmentation,
+        topCustomers: transformedTopCustomers,
+        activityPatterns,
+        churnAnalysis,
       }
     }),
 })

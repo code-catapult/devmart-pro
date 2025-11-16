@@ -1,7 +1,7 @@
 'use client'
 
 import { api } from '@/utils/api'
-import Link from 'next/link'
+// import Link from 'next/link'
 import {
   Button,
   Card,
@@ -38,8 +38,10 @@ import {
   RefreshCw,
 } from 'lucide-react'
 import { formatCurrency } from '@repo/shared/utils'
-import { Route } from 'next'
+import { format } from 'date-fns'
+// import { Route } from 'next'
 import { useAnalytics, DATE_RANGES } from '../AnalyticsContext'
+import AnalyticsNav from '../components/AnalyticsNav'
 
 // Colors for charts
 const COLORS = {
@@ -70,6 +72,7 @@ export default function OrderAnalyticsDashboardPage() {
     refetch,
     isFetching,
     error,
+    dataUpdatedAt,
   } = api.admin.orders.getOrderAnalytics.useQuery(
     {
       startDate,
@@ -117,6 +120,13 @@ export default function OrderAnalyticsDashboardPage() {
           <p className="text-sm text-gray-500 sm:text-base">
             Order insights and performance metrics
           </p>
+          {/* Last time since data updated */}
+          {dataUpdatedAt && (
+            <p className="text-xs text-gray-500 mt-1">
+              Last updated:{' '}
+              {format(new Date(dataUpdatedAt), 'MMM dd, yyyy h:mm a')}
+            </p>
+          )}
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -161,22 +171,7 @@ export default function OrderAnalyticsDashboardPage() {
       </div>
 
       {/* Analytics Navigation Tabs */}
-      <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
-          <Link
-            href="/admin/analytics/orders"
-            className="border-b-2 border-blue-500 py-4 px-1 text-sm font-medium text-blue-600"
-          >
-            Order Analytics
-          </Link>
-          <Link
-            href={'/admin/analytics' as Route}
-            className="border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
-          >
-            User & Revenue Analytics
-          </Link>
-        </nav>
-      </div>
+      <AnalyticsNav />
 
       {/* KPI Cards - Mobile Optimized */}
       <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">

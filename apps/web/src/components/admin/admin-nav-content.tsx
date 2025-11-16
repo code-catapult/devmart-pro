@@ -44,11 +44,7 @@ export function AdminNavContent({ user, onNavigate }: AdminNavContentProps) {
     { label: 'Customers', href: '/admin/customers', icon: DollarSign },
     { label: 'Categories', href: '/admin/categories', icon: FolderTree },
     { label: 'Store', href: '/products', icon: StoreIcon },
-    {
-      label: 'Analytics',
-      href: '/admin/analytics/orders',
-      icon: BarChart3,
-    },
+    { label: 'Analytics', href: '/admin/analytics/orders', icon: BarChart3 },
   ]
 
   return (

@@ -1,5 +1,6 @@
 import { prisma } from '~/lib/prisma'
 import { subDays, startOfDay, format } from 'date-fns'
+import { getCachedData } from '~/lib/cache'
 
 /**
  * UserAnalyticsService
@@ -11,8 +12,16 @@ import { subDays, startOfDay, format } from 'date-fns'
  * - Segment users by behavior and value
  * - Identify churn risks
  * - Generate top customer reports
+ *
+ * Performance:
+ * - Upstash Redis caching (5 minute TTL)
+ * - Graceful degradation if Redis unavailable
+ * - Optimized Prisma queries
+ * - Parallel execution with Promise.all
  */
 export class UserAnalyticsService {
+  // Cache TTL: 5 minutes (300 seconds)
+  private readonly CACHE_TTL = 300
   /**
    * Get user registration trends over time
    *
@@ -407,6 +416,229 @@ export class UserAnalyticsService {
       activeUsers: activityPatterns.activeLastMonth,
       activityRate: activityPatterns.activityRate.monthly,
     }
+  }
+
+  /**
+   * Get summary metrics for user analytics dashboard
+   * (Alias for getDashboardSummary with simplified return format)
+   *
+   * Returns:
+   * - Total users (all time)
+   * - New users this month
+   * - Active users (logged in last 30 days)
+   * - Churn rate (inactive 90+ days / total users)
+   *
+   * Caching: 5 minute TTL via Upstash Redis
+   */
+  async getSummaryMetrics() {
+    return getCachedData(
+      'analytics:summary_metrics',
+      async () => {
+        const summary = await this.getDashboardSummary()
+
+        const now = new Date()
+        const ninetyDaysAgo = subDays(now, 90)
+
+        // Calculate inactive users for churn rate
+        const inactiveUsers = await prisma.user.count({
+          where: {
+            OR: [
+              {
+                activityLogs: {
+                  none: {
+                    action: 'LOGIN',
+                    createdAt: { gte: ninetyDaysAgo },
+                  },
+                },
+              },
+              {
+                activityLogs: { none: {} }, // Never logged in
+              },
+            ],
+          },
+        })
+
+        const churnRate =
+          summary.totalUsers > 0
+            ? parseFloat(
+                ((inactiveUsers / summary.totalUsers) * 100).toFixed(1)
+              )
+            : 0
+
+        return {
+          totalUsers: summary.totalUsers,
+          newThisMonth: summary.newUsersThisMonth,
+          activeUsers: summary.activeUsers,
+          churnRate,
+        }
+      },
+      this.CACHE_TTL
+    )
+  }
+
+  /**
+   * Get registration trend (simplified wrapper for getRegistrationTrends)
+   * Supports Task 13's expected signature
+   *
+   * Caching: 5 minute TTL per period/date range combination via Upstash Redis
+   */
+  async getRegistrationTrend(
+    startDate: Date,
+    endDate: Date,
+    period: 'day' | 'week' | 'month' = 'day'
+  ) {
+    const cacheKey = `analytics:registration_trend:${startDate.getTime()}:${endDate.getTime()}:${period}`
+
+    return getCachedData(
+      cacheKey,
+      async () => {
+        const data = await this.getRegistrationTrends({
+          startDate,
+          endDate,
+          granularity: period,
+        })
+
+        // Transform to Task 13's expected format
+        return data.map((item) => ({
+          date: item.date,
+          users: item.count,
+          label:
+            period === 'day'
+              ? format(new Date(item.date), 'MMM dd')
+              : period === 'week'
+                ? `Week ${item.date.split('-W')[1]}`
+                : format(new Date(item.date + '-01'), 'MMM yyyy'),
+        }))
+      },
+      this.CACHE_TTL
+    )
+  }
+
+  /**
+   * Get activity patterns with login frequency distribution
+   * (Enhanced version for Task 13)
+   *
+   * Caching: 5 minute TTL per daysBack value via Upstash Redis
+   */
+  async getActivityPatternsDetailed(daysBack: number = 30) {
+    const cacheKey = `analytics:activity_patterns:${daysBack}`
+
+    return getCachedData(
+      cacheKey,
+      async () => {
+        const startDate = subDays(new Date(), daysBack)
+
+        // Get users with login counts
+        const users = await prisma.user.findMany({
+          include: {
+            activityLogs: {
+              where: {
+                action: 'LOGIN',
+                createdAt: { gte: startDate },
+              },
+              select: { createdAt: true },
+            },
+          },
+        })
+
+        const patterns = {
+          DAILY: 0, // 1+ login per day on average
+          WEEKLY: 0, // 1+ login per week on average
+          MONTHLY: 0, // 1+ login per month on average
+          RARELY: 0, // < 1 login per month
+        }
+
+        users.forEach((user) => {
+          const loginCount = user.activityLogs.length
+          const loginsPerDay = loginCount / daysBack
+
+          if (loginsPerDay >= 1) {
+            patterns.DAILY++
+          } else if (loginsPerDay >= 1 / 7) {
+            patterns.WEEKLY++
+          } else if (loginsPerDay >= 1 / 30) {
+            patterns.MONTHLY++
+          } else {
+            patterns.RARELY++
+          }
+        })
+
+        return [
+          { pattern: 'Daily', users: patterns.DAILY },
+          { pattern: 'Weekly', users: patterns.WEEKLY },
+          { pattern: 'Monthly', users: patterns.MONTHLY },
+          { pattern: 'Rarely', users: patterns.RARELY },
+        ]
+      },
+      this.CACHE_TTL
+    )
+  }
+
+  /**
+   * Get simplified churn analysis for Task 13
+   *
+   * Caching: 5 minute TTL via Upstash Redis
+   */
+  async getChurnAnalysisSimplified() {
+    return getCachedData(
+      'analytics:churn_analysis',
+      async () => {
+        const now = new Date()
+        const thirtyDaysAgo = subDays(now, 30)
+        const sixtyDaysAgo = subDays(now, 60)
+        const ninetyDaysAgo = subDays(now, 90)
+
+        const [atRiskCount, churnedCount] = await Promise.all([
+          // At risk: Last login 30-60 days ago
+          prisma.user.count({
+            where: {
+              activityLogs: {
+                some: {
+                  action: 'LOGIN',
+                  createdAt: {
+                    gte: sixtyDaysAgo,
+                    lt: thirtyDaysAgo,
+                  },
+                },
+              },
+              NOT: {
+                activityLogs: {
+                  some: {
+                    action: 'LOGIN',
+                    createdAt: { gte: thirtyDaysAgo },
+                  },
+                },
+              },
+            },
+          }),
+
+          // Churned: No login in 90+ days
+          prisma.user.count({
+            where: {
+              OR: [
+                {
+                  activityLogs: {
+                    none: {
+                      action: 'LOGIN',
+                      createdAt: { gte: ninetyDaysAgo },
+                    },
+                  },
+                },
+                {
+                  activityLogs: { none: {} }, // Never logged in
+                },
+              ],
+            },
+          }),
+        ])
+
+        return {
+          atRisk: atRiskCount,
+          churned: churnedCount,
+        }
+      },
+      this.CACHE_TTL
+    )
   }
 }
 
