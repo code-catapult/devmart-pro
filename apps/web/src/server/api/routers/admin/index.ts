@@ -5,6 +5,7 @@ import { dashboardRouter } from './dashboard'
 import { ordersRouter } from './orders'
 import { customersRouter } from './customers'
 import { userManagementRouter } from './user'
+import { securityRouter } from './security'
 
 /**
  * Admin Router
@@ -19,4 +20,5 @@ export const adminRouter = createTRPCRouter({
   orders: ordersRouter,
   customers: customersRouter,
   userManagement: userManagementRouter,
+  security: securityRouter,
 })

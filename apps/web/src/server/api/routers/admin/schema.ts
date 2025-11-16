@@ -504,3 +504,10 @@ export const getTopCustomersSchema = z.object({
 export const getActivityPatternsDetailedSchema = z.object({
   daysBack: z.number().min(1).max(365).default(30),
 })
+
+export const dismissSecurityAlertSchema = z.object({
+  alertType: z.string(),
+  userId: z.string().optional(),
+  ipAddress: z.string().optional(),
+  reason: z.string(),
+})

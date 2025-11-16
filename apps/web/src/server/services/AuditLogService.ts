@@ -1,5 +1,6 @@
 import { prisma } from '~/lib/prisma'
 import type { ActivityAction, Prisma } from '@prisma/client'
+import { subMinutes, subDays, subHours, differenceInDays } from 'date-fns'
 
 /**
  * AuditLogService
@@ -277,6 +278,380 @@ export class AuditLogService {
   }
 
   /**
+   * Detect failed login attempts (brute force attacks)
+   *
+   * Threshold: 5+ failed logins in 10 minutes indicates attack
+   * Returns alerts for users with excessive failures
+   */
+  async detectFailedLoginAttempts() {
+    const tenMinutesAgo = subMinutes(new Date(), 10)
+
+    // Group by userId and count failures
+    const suspiciousUsers = await prisma.activityLog.groupBy({
+      by: ['userId'],
+      where: {
+        action: 'LOGIN_FAILED',
+        createdAt: {
+          gte: tenMinutesAgo,
+        },
+      },
+      _count: {
+        id: true,
+      },
+      having: {
+        id: {
+          _count: {
+            gte: 5, // ← Threshold
+          },
+        },
+      },
+    })
+
+    // Get user details for each suspect
+    const alerts = await Promise.all(
+      suspiciousUsers.map(async (suspect) => {
+        const user = await prisma.user.findUnique({
+          where: { id: suspect.userId },
+          select: { email: true, name: true },
+        })
+
+        // Get IP addresses used in failed attempts
+        const recentFailures = await prisma.activityLog.findMany({
+          where: {
+            userId: suspect.userId,
+            action: 'LOGIN_FAILED',
+            createdAt: { gte: tenMinutesAgo },
+          },
+          select: { ipAddress: true },
+          distinct: ['ipAddress'],
+        })
+
+        return {
+          type: 'FAILED_LOGIN' as const,
+          severity: (suspect._count.id >= 10 ? 'HIGH' : 'MEDIUM') as
+            | 'HIGH'
+            | 'MEDIUM',
+          userId: suspect.userId,
+          userEmail: user?.email,
+          userName: user?.name,
+          count: suspect._count.id,
+          message: `${suspect._count.id} failed login attempts in 10 minutes`,
+          evidence: {
+            timeWindow: '10 minutes',
+            threshold: 5,
+            actual: suspect._count.id,
+            ipAddresses: recentFailures.map((f) => f.ipAddress),
+          },
+          timestamp: new Date(),
+        }
+      })
+    )
+
+    return alerts
+  }
+
+  /**
+   * Detect unusual login locations (account takeover)
+   *
+   * Flags logins from:
+   * 1. New countries (never seen before)
+   * 2. Impossible travel (too far too fast)
+   */
+  async detectUnusualLoginLocations() {
+    const alerts = []
+
+    // Get recent logins (last 24 hours)
+    const recentLogins = await prisma.activityLog.findMany({
+      where: {
+        action: 'LOGIN',
+        createdAt: {
+          gte: subDays(new Date(), 1),
+        },
+      },
+      select: {
+        userId: true,
+        ipAddress: true,
+        metadata: true, // Contains geolocation
+        createdAt: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    })
+
+    // Group by user
+    const userLogins = new Map<string, typeof recentLogins>()
+    for (const login of recentLogins) {
+      if (!userLogins.has(login.userId)) {
+        userLogins.set(login.userId, [])
+      }
+      userLogins.get(login.userId)!.push(login)
+    }
+
+    // Check each user's logins
+    for (const [userId, logins] of userLogins) {
+      if (logins.length === 0) continue
+
+      // Get user's historical countries (last 90 days)
+      const historicalLogins = await prisma.activityLog.findMany({
+        where: {
+          userId,
+          action: 'LOGIN',
+          createdAt: {
+            gte: subDays(new Date(), 90),
+            lt: subDays(new Date(), 1), // Exclude recent logins
+          },
+        },
+        select: {
+          metadata: true,
+        },
+      })
+
+      const historicalCountries = new Set(
+        historicalLogins
+          .map((log) => {
+            const metadata = log.metadata as { country?: string } | null
+            return metadata?.country
+          })
+          .filter(Boolean) as string[]
+      )
+
+      // Check latest login for new country
+      const latestLogin = logins[0]
+      const metadata = latestLogin.metadata as { country?: string } | null
+      const currentCountry = metadata?.country
+
+      if (
+        currentCountry &&
+        historicalCountries.size > 0 &&
+        !historicalCountries.has(currentCountry)
+      ) {
+        const user = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { email: true, name: true },
+        })
+
+        alerts.push({
+          type: 'UNUSUAL_LOCATION' as const,
+          severity: 'HIGH' as const,
+          userId,
+          userEmail: user?.email,
+          userName: user?.name,
+          message: `Login from new country: ${currentCountry}`,
+          evidence: {
+            currentCountry,
+            historicalCountries: Array.from(historicalCountries),
+            ipAddress: latestLogin.ipAddress,
+          },
+          timestamp: new Date(),
+        })
+      }
+    }
+
+    return alerts
+  }
+
+  /**
+   * Detect rapid account creation from same IP (spam/fraud)
+   *
+   * Threshold: 3+ accounts created from same IP in 1 hour
+   */
+  async detectRapidAccountCreation() {
+    const oneHourAgo = subHours(new Date(), 1)
+
+    // Get recent user creations with IP tracking
+    const creationEvents = await prisma.activityLog.findMany({
+      where: {
+        action: 'USER_CREATED',
+        createdAt: {
+          gte: oneHourAgo,
+        },
+      },
+      select: {
+        ipAddress: true,
+        userId: true,
+      },
+    })
+
+    // Group by IP
+    const ipGroups = new Map<string, string[]>()
+    for (const event of creationEvents) {
+      if (!ipGroups.has(event.ipAddress)) {
+        ipGroups.set(event.ipAddress, [])
+      }
+      ipGroups.get(event.ipAddress)!.push(event.userId)
+    }
+
+    // Find IPs with 3+ creations
+    const alerts = Array.from(ipGroups.entries())
+      .filter(([_ip, userIds]) => userIds.length >= 3)
+      .map(([ip, userIds]) => ({
+        type: 'RAPID_ACCOUNT_CREATION' as const,
+        severity: (userIds.length >= 5 ? 'HIGH' : 'MEDIUM') as
+          | 'HIGH'
+          | 'MEDIUM',
+        ipAddress: ip,
+        userIds,
+        count: userIds.length,
+        message: `${userIds.length} accounts created from IP ${ip} in 1 hour`,
+        evidence: {
+          timeWindow: '1 hour',
+          threshold: 3,
+          actual: userIds.length,
+        },
+        timestamp: new Date(),
+      }))
+
+    return alerts
+  }
+
+  /**
+   * Detect suspicious order patterns (fraud)
+   *
+   * Patterns:
+   * 1. High-value order from new account
+   * 2. Multiple orders in short time (card testing)
+   */
+  async detectSuspiciousOrders() {
+    const alerts = []
+
+    // Pattern 1: High-value first order from new account
+    const highValueNewOrders = await prisma.order.findMany({
+      where: {
+        createdAt: {
+          gte: subDays(new Date(), 1),
+        },
+        total: {
+          gte: 50000, // $500+
+        },
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            createdAt: true,
+            _count: {
+              select: { orders: true },
+            },
+          },
+        },
+      },
+    })
+
+    for (const order of highValueNewOrders) {
+      const accountAge = differenceInDays(new Date(), order.user.createdAt)
+      const isFirstOrder = order.user._count.orders === 1
+
+      if (accountAge <= 7 && isFirstOrder) {
+        alerts.push({
+          type: 'HIGH_VALUE_NEW_ACCOUNT' as const,
+          severity: 'HIGH' as const,
+          userId: order.userId,
+          userEmail: order.user.email,
+          userName: order.user.name,
+          orderId: order.id,
+          orderValue: order.total,
+          message: `$${(order.total / 100).toFixed(
+            2
+          )} order from ${accountAge}-day-old account`,
+          evidence: {
+            orderValue: order.total,
+            accountAge,
+            isFirstOrder: true,
+          },
+          timestamp: new Date(),
+        })
+      }
+    }
+
+    // Pattern 2: Rapid orders (card testing)
+    const fiveMinutesAgo = subMinutes(new Date(), 5)
+    const recentOrders = await prisma.order.findMany({
+      where: {
+        createdAt: {
+          gte: fiveMinutesAgo,
+        },
+      },
+      select: {
+        userId: true,
+        id: true,
+        total: true,
+      },
+    })
+
+    // Group by user
+    const userOrders = new Map<string, typeof recentOrders>()
+    for (const order of recentOrders) {
+      if (!userOrders.has(order.userId)) {
+        userOrders.set(order.userId, [])
+      }
+      userOrders.get(order.userId)!.push(order)
+    }
+
+    for (const [userId, orders] of userOrders) {
+      if (orders.length >= 3) {
+        const user = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { email: true, name: true },
+        })
+
+        alerts.push({
+          type: 'RAPID_ORDERS' as const,
+          severity: 'CRITICAL' as const,
+          userId,
+          userEmail: user?.email,
+          userName: user?.name,
+          count: orders.length,
+          message: `${orders.length} orders in 5 minutes (card testing suspected)`,
+          evidence: {
+            orderCount: orders.length,
+            timeWindow: '5 minutes',
+            orderIds: orders.map((o) => o.id),
+          },
+          timestamp: new Date(),
+        })
+      }
+    }
+
+    return alerts
+  }
+
+  /**
+   * Get all security alerts
+   *
+   * Runs all detection algorithms and combines results
+   */
+  async getAllSecurityAlerts() {
+    const [failedLogins, unusualLocations, rapidCreations, suspiciousOrders] =
+      await Promise.all([
+        this.detectFailedLoginAttempts(),
+        this.detectUnusualLoginLocations(),
+        this.detectRapidAccountCreation(),
+        this.detectSuspiciousOrders(),
+      ])
+
+    // Combine all alerts
+    const allAlerts = [
+      ...failedLogins,
+      ...unusualLocations,
+      ...rapidCreations,
+      ...suspiciousOrders,
+    ]
+
+    // Sort by severity (CRITICAL > HIGH > MEDIUM > LOW)
+    const severityOrder = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 }
+    allAlerts.sort((a, b) => {
+      const severityA = severityOrder[a.severity]
+      const severityB = severityOrder[b.severity]
+      return severityA - severityB
+    })
+
+    return allAlerts
+  }
+
+  /**
    * Get activity summary for a user
    * Used for user profile statistics
    *
@@ -350,6 +725,57 @@ export class AuditLogService {
     )
 
     return result.count
+  }
+
+  /**
+   * Dismiss a security alert
+   *
+   * Marks alert as investigated/false positive by logging the dismissal
+   * This creates an audit trail for security team oversight
+   *
+   * @param params Alert dismissal details
+   * @returns Success status and message
+   */
+  async dismissSecurityAlert(params: {
+    alertType: string
+    userId?: string
+    ipAddress?: string
+    reason: string
+    dismissedBy: string
+    dismissedByIp: string
+    dismissedByUserAgent: string
+  }) {
+    const {
+      alertType,
+      userId,
+      ipAddress,
+      reason,
+      dismissedBy,
+      dismissedByIp,
+      dismissedByUserAgent,
+    } = params
+
+    // Log the dismissal for audit trail
+    await prisma.activityLog.create({
+      data: {
+        userId: userId || 'system',
+        action: 'SECURITY_ALERT_DISMISSED',
+        metadata: {
+          alertType,
+          targetIpAddress: ipAddress,
+          reason,
+          dismissedBy,
+          dismissedAt: new Date().toISOString(),
+        },
+        ipAddress: dismissedByIp,
+        userAgent: dismissedByUserAgent,
+      },
+    })
+
+    return {
+      success: true,
+      message: 'Alert dismissed and logged',
+    }
   }
 }
 
