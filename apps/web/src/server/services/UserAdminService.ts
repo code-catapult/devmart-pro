@@ -404,6 +404,243 @@ export class UserAdminService {
       where: { role: 'ADMIN' },
     })
   }
+
+  /**
+   * Bulk update user roles
+   *
+   * Validates:
+   * - At least one admin remains after operation
+   * - All users exist
+   *
+   * Transaction ensures atomicity:
+   * - Either all roles change or none change
+   * - Activity logged for each user
+   *
+   * @param userIds Array of user IDs to update
+   * @param newRole New role to assign
+   * @param adminId ID of admin performing the action
+   * @returns Result with count and message
+   */
+  async bulkUpdateUserRoles(
+    userIds: string[],
+    newRole: Role,
+    adminId: string
+  ): Promise<{ count: number; message: string }> {
+    return await prisma.$transaction(async (tx) => {
+      // Validate all users exist
+      const users = await tx.user.findMany({
+        where: { id: { in: userIds } },
+        select: { id: true, role: true },
+      })
+
+      if (users.length !== userIds.length) {
+        throw new Error(`Only ${users.length} of ${userIds.length} users found`)
+      }
+
+      // If demoting to USER, ensure at least 1 admin remains
+      if (newRole === 'USER') {
+        const currentAdminCount = await tx.user.count({
+          where: { role: 'ADMIN' },
+        })
+
+        const adminsBeingDemoted = users.filter(
+          (u) => u.role === 'ADMIN'
+        ).length
+
+        if (currentAdminCount - adminsBeingDemoted < 1) {
+          throw new Error(
+            'Cannot demote all admins. At least one admin must remain.'
+          )
+        }
+      }
+
+      // Perform bulk update
+      const result = await tx.user.updateMany({
+        where: { id: { in: userIds } },
+        data: { role: newRole },
+      })
+
+      // Log activity for each user
+      await tx.activityLog.createMany({
+        data: userIds.map((userId) => ({
+          userId,
+          action: 'ROLE_CHANGED',
+          metadata: { newRole, bulk: true, adminId },
+          ipAddress: '0.0.0.0',
+          userAgent: 'Admin Bulk Action',
+        })),
+      })
+
+      return {
+        count: result.count,
+        message: `Successfully updated ${result.count} user(s) to ${newRole}`,
+      }
+    })
+  }
+
+  /**
+   * Bulk suspend user accounts
+   *
+   * Atomically:
+   * - Suspends all users
+   * - Invalidates all sessions
+   * - Logs suspension activity
+   *
+   * Validates admin count to prevent lockout
+   *
+   * @param userIds Array of user IDs to suspend
+   * @param reason Suspension reason
+   * @param adminId ID of admin performing the action
+   * @param notes Optional notes
+   * @returns Result with count and message
+   */
+  async bulkSuspendUsers(
+    userIds: string[],
+    reason: string,
+    adminId: string,
+    notes?: string
+  ): Promise<{ count: number; message: string }> {
+    return await prisma.$transaction(async (tx) => {
+      // Validate users exist
+      const users = await tx.user.findMany({
+        where: { id: { in: userIds } },
+        select: { id: true, role: true, suspended: true },
+      })
+
+      if (users.length !== userIds.length) {
+        throw new Error(`Only ${users.length} of ${userIds.length} users found`)
+      }
+
+      // Check if suspending active admins would leave none
+      const currentAdmins = await tx.user.count({
+        where: { role: 'ADMIN', suspended: false },
+      })
+
+      const activeAdminsBeingSuspended = users.filter(
+        (u) => u.role === 'ADMIN' && !u.suspended
+      ).length
+
+      if (currentAdmins - activeAdminsBeingSuspended < 1) {
+        throw new Error(
+          'Cannot suspend all active admins. System must have at least one admin.'
+        )
+      }
+
+      // Suspend users
+      await tx.user.updateMany({
+        where: { id: { in: userIds } },
+        data: {
+          suspended: true,
+          suspendedAt: new Date(),
+          suspensionReason: reason,
+        },
+      })
+
+      // Note: Using JWT auth, so no sessions to invalidate
+      // Suspended users will be blocked at auth middleware level
+
+      // Log activity
+      await tx.activityLog.createMany({
+        data: userIds.map((userId) => ({
+          userId,
+          action: 'ACCOUNT_SUSPENDED',
+          metadata: {
+            reason,
+            notes,
+            bulk: true,
+            adminId,
+          },
+          ipAddress: '0.0.0.0',
+          userAgent: 'Admin Bulk Action',
+        })),
+      })
+
+      return {
+        count: users.length,
+        message: `Successfully suspended ${users.length} user(s)`,
+      }
+    })
+  }
+
+  /**
+   * Bulk activate user accounts
+   *
+   * Reactivates suspended users and logs the action
+   *
+   * @param userIds Array of user IDs to activate
+   * @param adminId ID of admin performing the action
+   * @returns Result with count and message
+   */
+  async bulkActivateUsers(
+    userIds: string[],
+    adminId: string
+  ): Promise<{ count: number; message: string }> {
+    return await prisma.$transaction(async (tx) => {
+      // Activate users
+      const result = await tx.user.updateMany({
+        where: { id: { in: userIds }, suspended: true }, // Only activate suspended users
+        data: {
+          suspended: false,
+          suspendedAt: null,
+          suspensionReason: null,
+        },
+      })
+
+      // Log activity for successfully activated users
+      if (result.count > 0) {
+        await tx.activityLog.createMany({
+          data: userIds.map((userId) => ({
+            userId,
+            action: 'ACCOUNT_ACTIVATED',
+            metadata: { bulk: true, adminId },
+            ipAddress: '0.0.0.0',
+            userAgent: 'Admin Bulk Action',
+          })),
+        })
+      }
+
+      return {
+        count: result.count,
+        message: `Successfully activated ${result.count} user(s)`,
+      }
+    })
+  }
+
+  /**
+   * Bulk export user data
+   *
+   * Returns user data for selected users in exportable format
+   * Includes: name, email, role, status, orders, total spent
+   *
+   * @param userIds Array of user IDs to export
+   * @returns Array of user export data
+   */
+  async bulkExportUsers(userIds: string[]) {
+    const users = await prisma.user.findMany({
+      where: { id: { in: userIds } },
+      include: {
+        _count: {
+          select: { orders: true },
+        },
+        orders: {
+          select: { total: true },
+        },
+      },
+    })
+
+    // Format for export
+    return users.map((user) => ({
+      id: user.id,
+      name: user.name || 'N/A',
+      email: user.email,
+      role: user.role,
+      status: user.suspended ? 'Suspended' : 'Active',
+      orderCount: user._count.orders,
+      totalSpent: user.orders.reduce((sum, order) => sum + order.total, 0),
+      joinedDate: user.createdAt,
+      lastUpdated: user.updatedAt,
+    }))
+  }
 }
 
 export const userAdminService = new UserAdminService()

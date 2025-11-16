@@ -436,6 +436,11 @@ export const userRoleSchema = z.object({
   role: z.enum(['USER', 'ADMIN']),
 })
 
+export const bulkUpdateUserRolesSchema = z.object({
+  userIds: z.array(z.cuid()).min(1).max(100), // Max 100 for safety
+  newRole: z.enum(['USER', 'ADMIN']),
+})
+
 export const suspendAccountSchema = z.object({
   userId: z.cuid('Invalid user ID'),
   reason: z.enum([
@@ -450,8 +455,18 @@ export const suspendAccountSchema = z.object({
   notes: z.string().optional(),
 })
 
+export const bulkSuspendUsersSchema = z.object({
+  userIds: z.array(z.cuid()).min(1).max(100),
+  reason: z.enum(['FRAUD', 'ABUSE', 'PAYMENT_ISSUES', 'OTHER']),
+  notes: z.string().optional(),
+})
+
 export const activateAccountSchema = z.object({
   userId: z.cuid('Invalid user ID'),
+})
+
+export const bulkActivateUsersSchema = z.object({
+  userIds: z.array(z.cuid()).min(1).max(100),
 })
 
 export const addSupportNotesSchema = z.object({
@@ -470,6 +485,10 @@ export const exportUserListSchema = z.object({
       status: z.enum(['ALL', 'ACTIVE', 'SUSPENDED']).optional(),
     })
     .optional(),
+})
+
+export const bulkExportUsersSchema = z.object({
+  userIds: z.array(z.cuid()).min(1).max(1000), // Allow more for export
 })
 
 export const getRegistrationTrendSchema = z.object({

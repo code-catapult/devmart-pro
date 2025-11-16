@@ -2,8 +2,8 @@ import { redirect } from 'next/navigation'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '~/lib/auth'
 import { api } from '~/trpc/server'
-import { UserListTable } from './components/UserListTable'
 import { UserListCards } from './components/UserListCards'
+import { UserListWithBulkActions } from './components/UserListWithBulkActions'
 import { SearchBar } from './components/SearchBar'
 import { FilterBar } from './components/FilterBar'
 import { Pagination } from './components/Pagination'
@@ -219,7 +219,7 @@ export default async function UserListPage({ searchParams }: PageProps) {
       {/**
        * We render TWO versions of the user list:
        * 1. Card view for mobile (< 768px) - better for touch
-       * 2. Table view for desktop (≥ 768px) - better for scanning data
+       * 2. Table view for desktop (≥ 768px) - better for scanning data with bulk actions
        *
        * Tailwind's responsive prefixes handle the swap:
        * - "block md:hidden" = show on mobile, hide on desktop
@@ -227,6 +227,10 @@ export default async function UserListPage({ searchParams }: PageProps) {
        *
        * This is more performant than JavaScript-based responsive logic
        * because CSS handles it natively.
+       *
+       * BULK ACTIONS:
+       * - Desktop version includes bulk selection and actions
+       * - Mobile version uses simple card view for better UX on small screens
        */}
 
       {data.users.length === 0 ? (
@@ -267,9 +271,9 @@ export default async function UserListPage({ searchParams }: PageProps) {
             <UserListCards users={data.users} />
           </div>
 
-          {/* Desktop: Table View */}
+          {/* Desktop: Table View with Bulk Actions */}
           <div className="hidden md:block">
-            <UserListTable
+            <UserListWithBulkActions
               users={data.users}
               currentSort={{
                 field: filters.sortBy,

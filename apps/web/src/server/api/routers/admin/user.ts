@@ -14,6 +14,10 @@ import {
   getRegistrationTrendSchema,
   getTopCustomersSchema,
   getActivityPatternsDetailedSchema,
+  bulkUpdateUserRolesSchema,
+  bulkSuspendUsersSchema,
+  bulkActivateUsersSchema,
+  bulkExportUsersSchema,
 } from './schema'
 import { subDays } from 'date-fns'
 import { userAdminService } from '../../../services/UserAdminService'
@@ -92,183 +96,6 @@ export const userManagementRouter = createTRPCRouter({
      */
     return userExportService.getAvailableColumns()
   }),
-
-  // ============================================================================
-  // USER MANAGEMENT MUTATIONS
-  // ============================================================================
-
-  /**
-   * Update user role (promote to admin or demote to user)
-   * Validates: Cannot demote last admin (prevents system lockout)
-   * Side effects: Logs role change, sends email notification
-   */
-  updateUserRole: adminProcedure
-    .input(userRoleSchema)
-    .mutation(async ({ input, ctx }) => {
-      // Validate admin count before demotion
-      if (input.role === 'USER') {
-        const adminCount = await userAdminService.countAdmins()
-
-        if (adminCount === 1) {
-          const user = await ctx.prisma.user.findUnique({
-            where: { id: input.userId },
-            select: { role: true },
-          })
-
-          if (user?.role === 'ADMIN') {
-            throw new Error(
-              'Cannot demote the last admin. Promote another user to admin first.'
-            )
-          }
-        }
-      }
-
-      // Update role via service layer
-      const updatedUser = await userAdminService.updateRole(
-        input.userId,
-        input.role
-      )
-
-      // Log the role change for audit trail
-      await auditLogService.logActivity({
-        userId: input.userId,
-        action: 'ROLE_CHANGED',
-        metadata: {
-          oldRole: updatedUser.previousRole,
-          newRole: input.role,
-          changedBy: ctx.session.user.id, // Admin who made the change
-        },
-        ipAddress: ctx.ip,
-        userAgent: ctx.userAgent,
-      })
-
-      // TODO Task 19: Send role change email notification
-
-      return updatedUser
-    }),
-
-  /**
-   * Suspend user account
-   * Side effects: Invalidates sessions, logs suspension, sends email
-   */
-  suspendUser: adminProcedure
-    .input(suspendAccountSchema)
-    .mutation(async ({ input, ctx }) => {
-      // Suspend via service layer (handles session invalidation)
-      const suspendedUser = await userAdminService.suspendAccount(
-        input.userId,
-        input.reason,
-        input.notes
-      )
-
-      // Log suspension for audit trail
-      await auditLogService.logActivity({
-        userId: input.userId,
-        action: 'ACCOUNT_SUSPENDED',
-        metadata: {
-          reason: input.reason,
-          notes: input.notes,
-          suspendedBy: ctx.session.user.id,
-        },
-        ipAddress: ctx.ip,
-        userAgent: ctx.userAgent,
-      })
-
-      // TODO Task 19: Send suspension email notification
-
-      return suspendedUser
-    }),
-
-  /**
-   * Activate suspended user account
-   * Side effects: Logs activation, sends email
-   */
-  activateUser: adminProcedure
-    .input(activateAccountSchema)
-    .mutation(async ({ input, ctx }) => {
-      // Activate via service layer
-      const activatedUser = await userAdminService.activateAccount(input.userId)
-
-      // Log activation for audit trail
-      await auditLogService.logActivity({
-        userId: input.userId,
-        action: 'ACCOUNT_ACTIVATED',
-        metadata: {
-          activatedBy: ctx.session.user.id,
-        },
-        ipAddress: ctx.ip,
-        userAgent: ctx.userAgent,
-      })
-
-      // TODO Task 19: Send activation email notification
-
-      return activatedUser
-    }),
-
-  /**
-   * Add support note for customer service
-   * Associates note with admin author for accountability
-   */
-  addSupportNote: adminProcedure
-    .input(addSupportNotesSchema)
-    .mutation(async ({ input, ctx }) => {
-      const note = await supportService.addNote({
-        userId: input.userId,
-        adminId: ctx.session.user.id, // Current admin is author
-        category: input.category,
-        content: input.content,
-      })
-
-      return note
-    }),
-
-  exportUserList: adminProcedure
-    .input(exportUserListSchema)
-    .mutation(async ({ input }) => {
-      /**
-       * Export user list in specified format.
-       *
-       * Returns base64-encoded data for download in browser.
-       */
-      const data = await userExportService.exportUserList(
-        input.format,
-        input.columns,
-        input.filters
-      )
-
-      // Convert to base64 for transmission
-      if (input.format === 'csv') {
-        return {
-          data: Buffer.from(data as string).toString('base64'),
-          filename: `users_${new Date().toISOString().split('T')[0]}.csv`,
-          mimeType: 'text/csv',
-        }
-      } else {
-        return {
-          data: (data as Buffer).toString('base64'),
-          filename: `users_${new Date().toISOString().split('T')[0]}.xlsx`,
-          mimeType:
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        }
-      }
-    }),
-
-  exportUserDataGDPR: adminProcedure
-    .input(userIdSchema)
-    .mutation(async ({ input }) => {
-      /**
-       * Export complete user data for GDPR compliance.
-       *
-       * Returns JSON data for download.
-       */
-      const data = await userExportService.exportUserDataGDPR(input.userId)
-
-      return {
-        data: Buffer.from(JSON.stringify(data, null, 2)).toString('base64'),
-        filename: `user_data_${input.userId}_${new Date().toISOString().split('T')[0]}.json`,
-        mimeType: 'application/json',
-      }
-    }),
 
   /**
    * User Analytics
@@ -461,5 +288,262 @@ export const userManagementRouter = createTRPCRouter({
         activityPatterns,
         churnAnalysis,
       }
+    }),
+
+  // ============================================================================
+  // USER MANAGEMENT MUTATIONS
+  // ============================================================================
+
+  /**
+   * Update user role (promote to admin or demote to user)
+   * Validates: Cannot demote last admin (prevents system lockout)
+   * Side effects: Logs role change, sends email notification
+   */
+  updateUserRole: adminProcedure
+    .input(userRoleSchema)
+    .mutation(async ({ input, ctx }) => {
+      // Validate admin count before demotion
+      if (input.role === 'USER') {
+        const adminCount = await userAdminService.countAdmins()
+
+        if (adminCount === 1) {
+          const user = await ctx.prisma.user.findUnique({
+            where: { id: input.userId },
+            select: { role: true },
+          })
+
+          if (user?.role === 'ADMIN') {
+            throw new Error(
+              'Cannot demote the last admin. Promote another user to admin first.'
+            )
+          }
+        }
+      }
+
+      // Update role via service layer
+      const updatedUser = await userAdminService.updateRole(
+        input.userId,
+        input.role
+      )
+
+      // Log the role change for audit trail
+      await auditLogService.logActivity({
+        userId: input.userId,
+        action: 'ROLE_CHANGED',
+        metadata: {
+          oldRole: updatedUser.previousRole,
+          newRole: input.role,
+          changedBy: ctx.session.user.id, // Admin who made the change
+        },
+        ipAddress: ctx.ip,
+        userAgent: ctx.userAgent,
+      })
+
+      // TODO Task 19: Send role change email notification
+
+      return updatedUser
+    }),
+
+  /**
+   * Suspend user account
+   * Side effects: Invalidates sessions, logs suspension, sends email
+   */
+  suspendUser: adminProcedure
+    .input(suspendAccountSchema)
+    .mutation(async ({ input, ctx }) => {
+      // Suspend via service layer (handles session invalidation)
+      const suspendedUser = await userAdminService.suspendAccount(
+        input.userId,
+        input.reason,
+        input.notes
+      )
+
+      // Log suspension for audit trail
+      await auditLogService.logActivity({
+        userId: input.userId,
+        action: 'ACCOUNT_SUSPENDED',
+        metadata: {
+          reason: input.reason,
+          notes: input.notes,
+          suspendedBy: ctx.session.user.id,
+        },
+        ipAddress: ctx.ip,
+        userAgent: ctx.userAgent,
+      })
+
+      // TODO Task 19: Send suspension email notification
+
+      return suspendedUser
+    }),
+
+  /**
+   * Activate suspended user account
+   * Side effects: Logs activation, sends email
+   */
+  activateUser: adminProcedure
+    .input(activateAccountSchema)
+    .mutation(async ({ input, ctx }) => {
+      // Activate via service layer
+      const activatedUser = await userAdminService.activateAccount(input.userId)
+
+      // Log activation for audit trail
+      await auditLogService.logActivity({
+        userId: input.userId,
+        action: 'ACCOUNT_ACTIVATED',
+        metadata: {
+          activatedBy: ctx.session.user.id,
+        },
+        ipAddress: ctx.ip,
+        userAgent: ctx.userAgent,
+      })
+
+      // TODO Task 19: Send activation email notification
+
+      return activatedUser
+    }),
+
+  /**
+   * Add support note for customer service
+   * Associates note with admin author for accountability
+   */
+  addSupportNote: adminProcedure
+    .input(addSupportNotesSchema)
+    .mutation(async ({ input, ctx }) => {
+      const note = await supportService.addNote({
+        userId: input.userId,
+        adminId: ctx.session.user.id, // Current admin is author
+        category: input.category,
+        content: input.content,
+      })
+
+      return note
+    }),
+
+  exportUserList: adminProcedure
+    .input(exportUserListSchema)
+    .mutation(async ({ input }) => {
+      /**
+       * Export user list in specified format.
+       *
+       * Returns base64-encoded data for download in browser.
+       */
+      const data = await userExportService.exportUserList(
+        input.format,
+        input.columns,
+        input.filters
+      )
+
+      // Convert to base64 for transmission
+      if (input.format === 'csv') {
+        return {
+          data: Buffer.from(data as string).toString('base64'),
+          filename: `users_${new Date().toISOString().split('T')[0]}.csv`,
+          mimeType: 'text/csv',
+        }
+      } else {
+        return {
+          data: (data as Buffer).toString('base64'),
+          filename: `users_${new Date().toISOString().split('T')[0]}.xlsx`,
+          mimeType:
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        }
+      }
+    }),
+
+  exportUserDataGDPR: adminProcedure
+    .input(userIdSchema)
+    .mutation(async ({ input }) => {
+      /**
+       * Export complete user data for GDPR compliance.
+       *
+       * Returns JSON data for download.
+       */
+      const data = await userExportService.exportUserDataGDPR(input.userId)
+
+      return {
+        data: Buffer.from(JSON.stringify(data, null, 2)).toString('base64'),
+        filename: `user_data_${input.userId}_${new Date().toISOString().split('T')[0]}.json`,
+        mimeType: 'application/json',
+      }
+    }),
+
+  // ============================================================================
+  // BULK OPERATIONS ENDPOINTS
+  // ============================================================================
+
+  /**
+   * Bulk update user roles
+   *
+   * Validates:
+   * - At least one admin remains after operation
+   * - All users exist
+   *
+   * Transaction ensures atomicity:
+   * - Either all roles change or none change
+   * - Activity logged for each user
+   */
+  bulkUpdateUserRoles: adminProcedure
+    .input(bulkUpdateUserRolesSchema)
+    .mutation(async ({ input, ctx }) => {
+      const { userIds, newRole } = input
+
+      return await userAdminService.bulkUpdateUserRoles(
+        userIds,
+        newRole,
+        ctx.session.user.id
+      )
+    }),
+
+  /**
+   * Bulk suspend user accounts
+   *
+   * Atomically:
+   * - Suspends all users
+   * - Invalidates all sessions
+   * - Logs suspension activity
+   *
+   * Validates admin count to prevent lockout
+   */
+  bulkSuspendUsers: adminProcedure
+    .input(bulkSuspendUsersSchema)
+    .mutation(async ({ input, ctx }) => {
+      const { userIds, reason, notes } = input
+
+      return await userAdminService.bulkSuspendUsers(
+        userIds,
+        reason,
+        ctx.session.user.id,
+        notes
+      )
+    }),
+
+  /**
+   * Bulk activate user accounts
+   *
+   * Reactivates suspended users and logs the action
+   */
+  bulkActivateUsers: adminProcedure
+    .input(bulkActivateUsersSchema)
+    .mutation(async ({ input, ctx }) => {
+      const { userIds } = input
+
+      return await userAdminService.bulkActivateUsers(
+        userIds,
+        ctx.session.user.id
+      )
+    }),
+
+  /**
+   * Bulk export user data
+   *
+   * Returns user data for selected users in exportable format
+   * Includes: name, email, role, status, orders, total spent
+   */
+  bulkExportUsers: adminProcedure
+    .input(bulkExportUsersSchema)
+    .query(async ({ input }) => {
+      const { userIds } = input
+
+      return await userAdminService.bulkExportUsers(userIds)
     }),
 })
