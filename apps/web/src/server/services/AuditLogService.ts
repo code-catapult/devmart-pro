@@ -704,19 +704,25 @@ export class AuditLogService {
    * Archive old activity logs (for data retention compliance)
    * Run this as a background job (e.g., daily cron)
    *
-   * @param daysToKeep Number of days to keep logs (default 90)
+   * Marks logs as archived instead of deleting them.
+   * In production, export to S3/cloud storage before archiving.
+   *
+   * @param daysToKeep Number of days to keep logs active (default 90)
    * @returns Number of archived logs
    */
   async archiveOldLogs(daysToKeep: number = 90) {
     const cutoffDate = new Date(Date.now() - daysToKeep * 24 * 60 * 60 * 1000)
 
-    // In a real system, you'd move these to an archive table or external storage
-    // For now, we'll just delete them
-    const result = await prisma.activityLog.deleteMany({
+    // Mark logs as archived
+    const result = await prisma.activityLog.updateMany({
       where: {
         createdAt: {
           lt: cutoffDate,
         },
+        archived: false, // Only archive non-archived logs
+      },
+      data: {
+        archived: true,
       },
     })
 

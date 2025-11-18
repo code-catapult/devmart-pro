@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useState, useEffect, useCallback } from 'react'
 import { Search, X } from 'lucide-react'
+import { useDebounce } from '~/hooks/use-debounce'
 
 /**
  * SearchBar Component
@@ -47,6 +48,29 @@ export function SearchBar({ initialValue }: SearchBarProps) {
   const [isSearching, setIsSearching] = useState(false)
 
   // ============================================
+  // DEBOUNCED SEARCH VALUE
+  // ============================================
+
+  /**
+   * Debounce the search value to prevent excessive server requests.
+   * The debounced value updates 300ms after the user stops typing.
+   */
+  const debouncedSearchValue = useDebounce(searchValue, 300)
+
+  // ============================================
+  // SYNC WITH URL CHANGES
+  // ============================================
+
+  /**
+   * Reset isSearching when the page re-renders with new data.
+   * This happens when the URL changes and the parent page fetches new data.
+   */
+  useEffect(() => {
+    setIsSearching(false)
+    setSearchValue(initialValue)
+  }, [initialValue])
+
+  // ============================================
   // DEBOUNCED SEARCH FUNCTION
   // ============================================
 
@@ -88,28 +112,18 @@ export function SearchBar({ initialValue }: SearchBarProps) {
   )
 
   // ============================================
-  // DEBOUNCE EFFECT
+  // PERFORM SEARCH ON DEBOUNCED VALUE CHANGE
   // ============================================
 
   /**
-   * This effect runs whenever searchValue changes.
-   * It sets a timeout to call performSearch after 300ms.
-   * If searchValue changes again before 300ms, the cleanup
-   * function clears the previous timeout.
+   * Trigger search when debounced value changes and differs from URL.
+   * This runs after the user has stopped typing for 300ms.
    */
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (searchValue !== initialValue) {
-        performSearch(searchValue)
-      }
-    }, 300) // 300ms debounce delay
-
-    // Cleanup function: clear timeout if component unmounts
-    // or if searchValue changes before timeout fires
-    return () => {
-      clearTimeout(timeoutId)
+    if (debouncedSearchValue !== initialValue) {
+      performSearch(debouncedSearchValue)
     }
-  }, [searchValue, initialValue, performSearch])
+  }, [debouncedSearchValue, initialValue, performSearch])
 
   // ============================================
   // CLEAR SEARCH HANDLER
@@ -117,18 +131,11 @@ export function SearchBar({ initialValue }: SearchBarProps) {
 
   /**
    * Clear button click handler.
-   * Immediately clears the input and updates URL.
-   * No debouncing needed since this is an explicit user action.
+   * Clears the input value - the debounced search effect will handle
+   * the URL update automatically (empty strings debounce immediately).
    */
   const handleClear = () => {
     setSearchValue('')
-    setIsSearching(true)
-
-    const params = new URLSearchParams(searchParams.toString())
-    params.delete('search')
-    params.set('page', '1')
-
-    router.push(`/admin/users?${params.toString()}`)
   }
 
   // ============================================
@@ -148,7 +155,8 @@ export function SearchBar({ initialValue }: SearchBarProps) {
       {/* SEARCH INPUT */}
       {/* ============================================ */}
       <input
-        type="search" // Mobile keyboards show search button instead of return
+        type="text"
+        inputMode="search" // Mobile keyboards show search button instead of return
         value={searchValue}
         onChange={(e) => setSearchValue(e.target.value)}
         placeholder="Search by name or email..."

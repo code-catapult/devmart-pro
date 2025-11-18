@@ -11,6 +11,22 @@ const prisma = new PrismaClient()
 async function main() {
   console.log('🌱 Starting database seed...')
 
+  // Clean up existing data (in correct order for foreign key constraints)
+  console.log('🧹 Cleaning up existing data...')
+  await prisma.review.deleteMany({})
+  await prisma.cartItem.deleteMany({})
+  await prisma.orderItem.deleteMany({})
+  await prisma.orderNote.deleteMany({})
+  await prisma.orderStatusChange.deleteMany({})
+  await prisma.order.deleteMany({})
+  await prisma.activityLog.deleteMany({})
+  await prisma.supportNote.deleteMany({})
+  await prisma.account.deleteMany({})
+  await prisma.user.deleteMany({})
+  await prisma.product.deleteMany({})
+  await prisma.category.deleteMany({})
+  await prisma.webhookEvent.deleteMany({})
+
   // Create categories
   console.log('📁 Creating categories...')
   const electronics = await prisma.category.create({
@@ -125,7 +141,7 @@ async function main() {
   // Create admin user with hashed password
   console.log('👤 Creating users...')
   const adminPassword = await hash('Admin123!', 12) // Demo password
-  const adminUser = await prisma.user.create({
+  await prisma.user.create({
     data: {
       email: 'admin@devmart.com',
       name: 'Admin User',
@@ -1465,7 +1481,7 @@ async function main() {
 
   // Create sample orders
   console.log('📦 Creating orders...')
-  const order1 = await prisma.order.create({
+  await prisma.order.create({
     data: {
       orderNumber: 'DM-2024-001',
       userId: customer1.id,

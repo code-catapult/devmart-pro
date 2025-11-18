@@ -22,6 +22,7 @@ model ActivityLog {
   metadata  Json?
   ipAddress String    // IP address for security tracking
   userAgent String    // Browser/device info (can be long)
+  archived   Boolean  @default(false)
   createdAt DateTime       @default(now())
 
   // CASCADE delete when user account deleted (remove their activity history)
@@ -37,6 +38,7 @@ model ActivityLog {
   @@index([action, createdAt])         // Action-specific analytics over time
   @@index([userId, action])            // User's specific action history
   @@index([ipAddress, createdAt])      // IP-based suspicious activity detection
+  @@index([archived, createdAt]) // Fast archival queries
 }
 
 model SupportNote {
@@ -346,6 +348,7 @@ enum ActivityAction {
   // Profile events
   PROFILE_UPDATED
   PASSWORD_CHANGED
+  PASSWORD_CHANGE_FAILED
 
   // Order events
   ORDER_CREATED
