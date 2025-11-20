@@ -15,6 +15,7 @@ import {
   BarChart3,
   DollarSign,
   Shield,
+  Settings2,
 } from 'lucide-react'
 import { signOut } from 'next-auth/react'
 import { Route } from 'next'
@@ -51,6 +52,11 @@ export function AdminNavContent({ user, onNavigate }: AdminNavContentProps) {
       label: 'Security',
       icon: Shield,
       description: 'Monitor security threats and suspicious activity',
+    },
+    {
+      href: '/settings',
+      label: 'Settings',
+      icon: Settings2,
     },
   ]
 

@@ -116,6 +116,39 @@ export const userRouter = createTRPCRouter({
       return updatedUser
     }),
 
+  /**
+   * Update user preferences (theme)
+   */
+  updatePreferences: protectedProcedure
+    .input(
+      z.object({
+        theme: z.enum(['LIGHT', 'DARK', 'SYSTEM']),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const { theme } = input
+      const userId = ctx.session.user.id
+
+      await prisma.user.update({
+        where: { id: userId },
+        data: { theme },
+      })
+
+      return { success: true, theme }
+    }),
+
+  /**
+   * Get user preferences
+   */
+  getPreferences: protectedProcedure.query(async ({ ctx }) => {
+    const user = await prisma.user.findUnique({
+      where: { id: ctx.session.user.id },
+      select: { theme: true },
+    })
+
+    return { theme: user?.theme || 'SYSTEM' }
+  }),
+
   // Get user's order history (protected)
   getOrderHistory: protectedProcedure
     .input(
