@@ -29,6 +29,7 @@ import {
   Eye,
   X,
   RefreshCw,
+  CreditCard,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import Link from 'next/link'
@@ -41,7 +42,7 @@ type AlertType =
   | 'HIGH_VALUE_NEW_ACCOUNT'
   | 'RAPID_ORDERS'
 
-interface SecurityAlert {
+export interface SecurityAlert {
   type: AlertType
   severity: AlertSeverity
   userId?: string
@@ -132,6 +133,7 @@ export function SecurityMonitoring() {
       case 'RAPID_ACCOUNT_CREATION':
         return <Users className="h-5 w-5" />
       case 'HIGH_VALUE_NEW_ACCOUNT':
+        return <CreditCard className="h-5 w-5" />
       case 'RAPID_ORDERS':
         return <ShoppingCart className="h-5 w-5" />
     }

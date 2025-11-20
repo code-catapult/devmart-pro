@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useUserProfile } from '@/hooks/useUserProfile'
-
+import { useRouter } from 'next/navigation'
 import {
   Alert,
   AlertDescription,
@@ -16,6 +16,8 @@ import {
 } from '@repo/ui'
 
 export function ProfileForm() {
+  const router = useRouter()
+
   const { profile, updateProfile, isUpdating, updateError, profileLoading } =
     useUserProfile()
   const [formData, setFormData] = useState({
@@ -24,6 +26,10 @@ export function ProfileForm() {
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [successMessage, setSuccessMessage] = useState('')
+
+  const handleBack = () => {
+    return router.back()
+  }
 
   // Populate form when profile loads
   useEffect(() => {
@@ -94,94 +100,107 @@ export function ProfileForm() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Profile Information</CardTitle>
-        <CardDescription>Update your account information</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {successMessage && (
-            <Alert>
-              <AlertDescription>{successMessage}</AlertDescription>
-            </Alert>
-          )}
-
-          {updateError && (
-            <Alert variant="destructive">
-              <AlertDescription>{updateError.message}</AlertDescription>
-            </Alert>
-          )}
-
-          <div className="space-y-2">
-            <label htmlFor="name" className="text-sm font-medium">
-              Full Name
-            </label>
-            <Input
-              id="name"
-              name="name"
-              type="text"
-              value={formData.name}
-              onChange={handleInputChange}
-              className={errors.name ? 'border-red-500' : ''}
-            />
-            {errors.name && (
-              <p className="text-sm text-red-600">{errors.name}</p>
+    <div>
+      <div>
+        <Button
+          variant={'ghost'}
+          className="w-full sm:w-1/6 border outline-0 bg-transparent mb-2 sm:mb-4"
+          onClick={handleBack}
+        >
+          Back
+        </Button>
+      </div>
+      <Card>
+        <CardHeader>
+          <div>
+            <CardTitle>Profile Information</CardTitle>
+            <CardDescription>Update your account information</CardDescription>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {successMessage && (
+              <Alert>
+                <AlertDescription>{successMessage}</AlertDescription>
+              </Alert>
             )}
-          </div>
 
-          <div className="space-y-2">
-            <label htmlFor="email" className="text-sm font-medium">
-              Email Address
-            </label>
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              value={formData.email}
-              onChange={handleInputChange}
-              className={errors.email ? 'border-red-500' : ''}
-            />
-            {errors.email && (
-              <p className="text-sm text-red-600">{errors.email}</p>
+            {updateError && (
+              <Alert variant="destructive">
+                <AlertDescription>{updateError.message}</AlertDescription>
+              </Alert>
             )}
-          </div>
 
-          <div className="pt-4">
-            <Button type="submit" disabled={isUpdating}>
-              {isUpdating ? 'Updating...' : 'Update Profile'}
-            </Button>
-          </div>
-        </form>
+            <div className="space-y-2">
+              <label htmlFor="name" className="text-sm font-medium">
+                Full Name
+              </label>
+              <Input
+                id="name"
+                name="name"
+                type="text"
+                value={formData.name}
+                onChange={handleInputChange}
+                className={errors.name ? 'border-red-500' : ''}
+              />
+              {errors.name && (
+                <p className="text-sm text-red-600">{errors.name}</p>
+              )}
+            </div>
 
-        {profile && (
-          <div className="mt-8 pt-6 border-t">
-            <h3 className="text-lg font-medium mb-4">Account Statistics</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <p className="text-sm text-gray-600">Total Orders</p>
-                <p className="text-2xl font-bold text-gray-600">
-                  {profile._count?.orders || 0}
-                </p>
-              </div>
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <p className="text-sm text-gray-600">Reviews Written</p>
-                <p className="text-2xl font-bold text-gray-600">
-                  {profile._count?.reviews || 0}
-                </p>
-              </div>
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <p className="text-sm text-gray-600">Member Since</p>
-                <p className="text-sm font-medium text-gray-600">
-                  {profile.createdAt
-                    ? new Date(profile.createdAt).toLocaleDateString()
-                    : 'N/A'}
-                </p>
+            <div className="space-y-2">
+              <label htmlFor="email" className="text-sm font-medium">
+                Email Address
+              </label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                className={errors.email ? 'border-red-500' : ''}
+              />
+              {errors.email && (
+                <p className="text-sm text-red-600">{errors.email}</p>
+              )}
+            </div>
+
+            <div className="pt-4">
+              <Button type="submit" disabled={isUpdating}>
+                {isUpdating ? 'Updating...' : 'Update Profile'}
+              </Button>
+            </div>
+          </form>
+
+          {profile && (
+            <div className="mt-8 pt-6 border-t">
+              <h3 className="text-lg font-medium mb-4">Account Statistics</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <p className="text-sm text-gray-600">Total Orders</p>
+                  <p className="text-2xl font-bold text-gray-600">
+                    {profile._count?.orders || 0}
+                  </p>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <p className="text-sm text-gray-600">Reviews Written</p>
+                  <p className="text-2xl font-bold text-gray-600">
+                    {profile._count?.reviews || 0}
+                  </p>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <p className="text-sm text-gray-600">Member Since</p>
+                  <p className="text-sm font-medium text-gray-600">
+                    {profile.createdAt
+                      ? new Date(profile.createdAt).toLocaleDateString()
+                      : 'N/A'}
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   )
 }

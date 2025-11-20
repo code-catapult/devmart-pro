@@ -1,6 +1,15 @@
+import { emailService } from './EmailService'
+import { emailTemplates } from '~/lib/email-templates'
 import { prisma } from '~/lib/prisma'
 import type { ActivityAction, Prisma } from '@prisma/client'
-import { subMinutes, subDays, subHours, differenceInDays } from 'date-fns'
+import {
+  subMinutes,
+  subDays,
+  subHours,
+  differenceInDays,
+  format,
+} from 'date-fns'
+import { SecurityAlert } from '../../components/admin/security-monitoring'
 
 /**
  * AuditLogService
@@ -38,6 +47,19 @@ export class AuditLogService {
           userAgent: data.userAgent,
         },
       })
+
+      // Real-time alert triggers (async, don't block)
+      if (data.action === 'LOGIN_FAILED') {
+        this.checkFailedLoginThreshold(data.userId, data.ipAddress).catch(
+          (err) => console.error('Failed login alert error:', err)
+        )
+      }
+
+      if (data.action === 'PASSWORD_CHANGED') {
+        this.sendPasswordChangeAlert(data.userId, data.ipAddress).catch((err) =>
+          console.error('Password change alert error:', err)
+        )
+      }
 
       return log
     } catch (error) {
@@ -713,7 +735,7 @@ export class AuditLogService {
   async archiveOldLogs(daysToKeep: number = 90) {
     const cutoffDate = new Date(Date.now() - daysToKeep * 24 * 60 * 60 * 1000)
 
-    // Mark logs as archived
+    // Mark logs as archived instead of deleting
     const result = await prisma.activityLog.updateMany({
       where: {
         createdAt: {
@@ -782,6 +804,139 @@ export class AuditLogService {
       success: true,
       message: 'Alert dismissed and logged',
     }
+  }
+
+  /**
+   * Check if user exceeded failed login threshold and send alert
+   * Triggered on each LOGIN_FAILED event
+   */
+  private async checkFailedLoginThreshold(
+    userId: string,
+    ipAddress: string
+  ): Promise<void> {
+    // Count failed login attempts in last 10 minutes
+    const tenMinutesAgo = subMinutes(new Date(), 10)
+
+    const failedAttempts = await prisma.activityLog.count({
+      where: {
+        userId,
+        action: 'LOGIN_FAILED',
+        createdAt: {
+          gte: tenMinutesAgo,
+        },
+      },
+    })
+
+    // Send alert if threshold reached (5 attempts)
+    if (failedAttempts >= 5) {
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { email: true, name: true },
+      })
+
+      if (!user) return
+
+      const alert: SecurityAlert = {
+        type: 'FAILED_LOGIN',
+        severity: 'HIGH',
+        userId,
+        userEmail: user.email,
+        userName: user.name,
+        ipAddress,
+        message: `${failedAttempts} failed login attempts detected in the last 10 minutes`,
+        evidence: {
+          attemptCount: failedAttempts,
+          ipAddress,
+          timeWindow: '10 minutes',
+        },
+        timestamp: new Date(),
+      }
+
+      await this.sendSuspiciousActivityAlert(alert)
+    }
+  }
+
+  /**
+   * Send password change alert to user
+   * Triggered on each PASSWORD_CHANGED event
+   */
+  private async sendPasswordChangeAlert(
+    userId: string,
+    ipAddress: string
+  ): Promise<void> {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { email: true, name: true },
+    })
+
+    if (!user) return
+
+    const alert: SecurityAlert = {
+      type: 'FAILED_LOGIN', // Reusing type for now, could add PASSWORD_CHANGED type
+      severity: 'MEDIUM',
+      userId,
+      userEmail: user.email,
+      userName: user.name,
+      ipAddress,
+      message: 'Your password was recently changed',
+      evidence: {
+        ipAddress,
+        action: 'PASSWORD_CHANGED',
+      },
+      timestamp: new Date(),
+    }
+
+    await this.sendSuspiciousActivityAlert(alert)
+  }
+
+  /**
+   * Send suspicious activity alert email to user
+   */
+  async sendSuspiciousActivityAlert(alert: SecurityAlert) {
+    if (!alert.userEmail) return
+
+    const emailData = emailTemplates.suspiciousActivity({
+      userName: alert.userName || alert.userEmail,
+      activityType: alert.message,
+      timestamp: format(alert.timestamp, 'PPpp'),
+      ipAddress: (alert.evidence.ipAddress as string) || 'Unknown',
+      location: alert.evidence.currentCountry
+        ? `${alert.evidence.currentCountry as string}`
+        : undefined,
+    })
+
+    try {
+      await emailService.sendEmail({
+        to: alert.userEmail,
+        subject: emailData.subject,
+        html: emailData.html,
+      })
+
+      console.log(`Suspicious activity email sent to ${alert.userEmail}`)
+    } catch (error) {
+      console.error('Failed to send suspicious activity email:', error)
+    }
+  }
+
+  /**
+   * Detect and alert suspicious activity
+   */
+  async detectAndAlert() {
+    const alerts = await this.getAllSecurityAlerts()
+
+    // Send emails for HIGH and CRITICAL alerts
+    const criticalAlerts = alerts.filter(
+      (a) => a.severity === 'HIGH' || a.severity === 'CRITICAL'
+    )
+
+    for (const alert of criticalAlerts) {
+      // Send email (async, don't wait)
+      this.sendSuspiciousActivityAlert(alert).catch((err) => {
+        console.error('Email alert failed:', err)
+      })
+    }
+
+    return alerts
   }
 }
 

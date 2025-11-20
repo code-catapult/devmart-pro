@@ -1,3 +1,4 @@
+import { emailService } from '~/server/services/EmailService'
 import { createTRPCRouter, adminProcedure } from '~/server/api/trpc'
 import { TRPCError } from '@trpc/server'
 import {
@@ -20,12 +21,13 @@ import {
   bulkExportUsersSchema,
 } from './schema'
 import { subDays } from 'date-fns'
-import { userAdminService } from '../../../services/UserAdminService'
-import { auditLogService } from '../../../services/AuditLogService'
-import { supportService } from '../../../services/SupportService'
-import { userExportService } from '../../../services/UserExportService'
-import { userAnalyticsService } from '../../../services/UserAnalyticsService'
-import { revenueAnalyticsService } from '../../../services/RevenueAnalyticsService'
+import { userAdminService } from '~/server/services/UserAdminService'
+import { auditLogService } from '~/server/services/AuditLogService'
+import { supportService } from '~/server/services/SupportService'
+import { userExportService } from '~/server/services/UserExportService'
+import { userAnalyticsService } from '~/server/services/UserAnalyticsService'
+import { revenueAnalyticsService } from '~/server/services/RevenueAnalyticsService'
+import { emailTemplates } from '~/lib/email-templates'
 
 export const userManagementRouter = createTRPCRouter({
   /**
@@ -339,7 +341,24 @@ export const userManagementRouter = createTRPCRouter({
         userAgent: ctx.userAgent,
       })
 
-      // TODO Task 19: Send role change email notification
+      // Send role change email notification (async, don't block)
+      const emailData = emailTemplates.roleChange({
+        userName: updatedUser.name || updatedUser.email,
+        newRole: updatedUser.role,
+        adminName: ctx.session.user.name || 'Administrator',
+      })
+
+      await emailService
+        .sendEmail({
+          to: updatedUser.email,
+          subject: emailData.subject,
+          html: emailData.html,
+        })
+        .catch((error) => {
+          if (error instanceof Error) {
+            console.error('Failed to send role change email:', error.message)
+          }
+        })
 
       return updatedUser
     }),
@@ -371,7 +390,25 @@ export const userManagementRouter = createTRPCRouter({
         userAgent: ctx.userAgent,
       })
 
-      // TODO Task 19: Send suspension email notification
+      // Send suspension email notification (async, don't block)
+      const emailData = emailTemplates.accountSuspended({
+        userName: suspendedUser.name || suspendedUser.email,
+        reason: input.reason,
+        notes: input.notes,
+        supportEmail: 'support@devmart.com',
+      })
+
+      await emailService
+        .sendEmail({
+          to: suspendedUser.email,
+          subject: emailData.subject,
+          html: emailData.html,
+        })
+        .catch((error) => {
+          if (error instanceof Error) {
+            console.error('Failed to send suspension email:', error.message)
+          }
+        })
 
       return suspendedUser
     }),
@@ -397,7 +434,20 @@ export const userManagementRouter = createTRPCRouter({
         userAgent: ctx.userAgent,
       })
 
-      // TODO Task 19: Send activation email notification
+      // Re-activation from suspension email
+      const emailData = emailTemplates.accountActivated({
+        userName: activatedUser.name || activatedUser.email,
+      })
+
+      await emailService
+        .sendEmail({
+          to: activatedUser.email,
+          subject: emailData.subject,
+          html: emailData.html,
+        })
+        .catch((err) => {
+          console.error('Failed to send activation email:', err)
+        })
 
       return activatedUser
     }),
