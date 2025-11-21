@@ -22,7 +22,6 @@ import { Route } from 'next'
 
 /**
  * AdminNavContent Component
- *
  * Shared navigation content used in both desktop sidebar and mobile drawer.
  * DRY principle: Define navigation structure once, use everywhere.
  */
