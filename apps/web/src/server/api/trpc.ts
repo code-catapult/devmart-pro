@@ -12,14 +12,29 @@ import superjson from 'superjson'
  * This section defines the "context" that is available in all tRPC procedures.
  * The context is data that all of your tRPC procedures will have access to.
  */
-export const createTRPCContext = async (_opts: FetchCreateContextFnOptions) => {
+export const createTRPCContext = async (opts: FetchCreateContextFnOptions) => {
   // Get the session from NextAuth (App Router)
   const session = await getServerSession(authOptions)
+
+  // Extract IP address and user agent from request headers
+  const headers = opts.req.headers
+
+  // Try multiple headers for IP (common proxy headers)
+  const ip =
+    headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    headers.get('x-real-ip') ||
+    headers.get('cf-connecting-ip') || // Cloudflare
+    'unknown'
+
+  const userAgent = headers.get('user-agent') || 'unknown'
 
   return {
     session,
     user: session?.user || null, // User is null if not authenticated
     prisma,
+    // Request metadata for audit logging
+    ip,
+    userAgent,
   }
 }
 

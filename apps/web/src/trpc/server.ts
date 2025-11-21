@@ -9,10 +9,14 @@ export const api = cache(async () => {
   const session = await getServerSession(authOptions)
 
   // Create context with session (matches the context from Story 1.3)
+  // Note: In server components, we don't have access to request headers
+  // Use 'server-component' as placeholder values
   const context = {
     session,
     user: session?.user ?? null,
     prisma,
+    ip: 'server-component',
+    userAgent: 'server-component',
   }
 
   return appRouter.createCaller(context)
@@ -25,6 +29,8 @@ export const staticApi = cache(async () => {
     session: null,
     user: null,
     prisma,
+    ip: 'static-generation',
+    userAgent: 'static-generation',
   }
 
   return appRouter.createCaller(context)

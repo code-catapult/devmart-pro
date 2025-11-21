@@ -5,6 +5,7 @@ import { orderRepository } from '~/server/repositories/OrderRepository'
 import { orderService } from '~/server/services/OrderService'
 import { paymentService } from '~/server/services/PaymentService'
 import { cartService } from '~/server/services/CartService'
+import { auditLogService } from '~/server/services/AuditLogService'
 import type { OrderWithItems } from '~/types/database'
 
 const ShippingAddressSchema = z.object({
@@ -60,11 +61,27 @@ export const ordersRouter = createTRPCRouter({
         })
       }
 
-      return await orderService.createOrderFromCart(
+      // Create order via service (business logic)
+      const order = await orderService.createOrderFromCart(
         ctx.session.user.id,
         input.shippingAddress,
         input.paymentIntentId
       )
+
+      // Log order creation activity (async, non-blocking)
+      void auditLogService.logActivity({
+        userId: ctx.session.user.id,
+        action: 'ORDER_CREATED',
+        metadata: {
+          orderId: order.id,
+          orderNumber: order.orderNumber,
+          total: order.total,
+        },
+        ipAddress: ctx.ip,
+        userAgent: ctx.userAgent,
+      })
+
+      return order
     }),
 
   /**

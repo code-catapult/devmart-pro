@@ -13,13 +13,15 @@ import {
   StoreIcon,
   FolderTree,
   BarChart3,
+  DollarSign,
+  Shield,
+  Settings2,
 } from 'lucide-react'
 import { signOut } from 'next-auth/react'
 import { Route } from 'next'
 
 /**
  * AdminNavContent Component
- *
  * Shared navigation content used in both desktop sidebar and mobile drawer.
  * DRY principle: Define navigation structure once, use everywhere.
  */
@@ -35,21 +37,33 @@ interface AdminNavContentProps {
 export function AdminNavContent({ user, onNavigate }: AdminNavContentProps) {
   const pathname = usePathname()
 
-  const navItems = [
+  const navigationItems = [
     { label: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
     { label: 'Products', href: '/admin/products', icon: Package },
     { label: 'Orders', href: '/admin/orders', icon: ShoppingCart },
-    { label: 'Customers', href: '/admin/customers', icon: Users },
+    { label: 'Users', href: '/admin/users', icon: Users },
+    { label: 'Customers', href: '/admin/customers', icon: DollarSign },
     { label: 'Categories', href: '/admin/categories', icon: FolderTree },
     { label: 'Store', href: '/products', icon: StoreIcon },
-    { label: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
+    { label: 'Analytics', href: '/admin/analytics/orders', icon: BarChart3 },
+    {
+      href: '/admin/security',
+      label: 'Security',
+      icon: Shield,
+      description: 'Monitor security threats and suspicious activity',
+    },
+    {
+      href: '/settings',
+      label: 'Settings',
+      icon: Settings2,
+    },
   ]
 
   return (
     <div className="flex flex-col h-full">
       {/* Navigation Links */}
       <nav className="flex-1 p-4 space-y-2">
-        {navItems.map((item) => (
+        {navigationItems.map((item) => (
           <Link
             key={item.href}
             href={item.href as Route}

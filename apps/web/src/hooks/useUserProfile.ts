@@ -8,6 +8,7 @@ import { updateProfile } from '@/store/slices/authSlice'
 export function useUserProfile() {
   const { isAuthenticated } = useAuth()
   const dispatch = useAppDispatch()
+  const utils = api.useUtils()
 
   // Get user profile with additional data
   const profileQuery = api.user.getProfile.useQuery(undefined, {
@@ -22,7 +23,8 @@ export function useUserProfile() {
       dispatch(updateProfile(updatedUser))
 
       // Invalidate and refetch profile data
-      profileQuery.refetch()
+      // profileQuery.refetch()
+      void utils.user.getProfile.invalidate()
     },
   })
 

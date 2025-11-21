@@ -5,6 +5,7 @@ import { prisma } from '~/lib/prisma'
 import { Role } from '@repo/shared/types'
 import crypto from 'crypto'
 import { sendPasswordResetEmail } from '~/lib/email'
+import { auditLogService } from '../../services/AuditLogService'
 
 // Input validation schemas
 const registerSchema = z.object({
@@ -29,7 +30,7 @@ export const authRouter = createTRPCRouter({
   // User registration
   register: publicProcedure
     .input(registerSchema)
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       const { email, password, name } = input
 
       // Check if user already exists
@@ -53,6 +54,19 @@ export const authRouter = createTRPCRouter({
             passwordHash,
             role: Role.USER,
           },
+        })
+
+        // Log user registration (async, non-blocking)
+        void auditLogService.logActivity({
+          userId: user.id,
+          action: 'USER_CREATED',
+          metadata: {
+            email: user.email,
+            name: user.name,
+            role: user.role,
+          },
+          ipAddress: ctx.ip,
+          userAgent: ctx.userAgent,
         })
 
         // Don't return sensitive data
@@ -152,7 +166,7 @@ export const authRouter = createTRPCRouter({
           ),
       })
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       const { token, password } = input
 
       // Verify the token from database
@@ -182,6 +196,18 @@ export const authRouter = createTRPCRouter({
           resetTokenExpiry: null,
           lastPasswordChange: new Date(),
         },
+      })
+
+      // Log successful password reset (async, non-blocking)
+      void auditLogService.logActivity({
+        userId: user.id,
+        action: 'PASSWORD_CHANGED',
+        metadata: {
+          method: 'password_reset',
+          resetTokenUsed: true,
+        },
+        ipAddress: ctx.ip,
+        userAgent: ctx.userAgent,
       })
 
       return {

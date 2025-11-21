@@ -9,7 +9,9 @@ import { prisma } from '~/lib/prisma'
 import { z } from 'zod'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '~/lib/auth'
+import { auditLogService } from '~/server/services/AuditLogService'
 
+// For logged in users changing password with for under profile
 // PUT /api/user/password
 async function changePassword(req: AuthenticatedRequest) {
   try {
@@ -59,6 +61,24 @@ async function changePassword(req: AuthenticatedRequest) {
     const isPasswordValid = await compare(currentPassword, user.passwordHash)
 
     if (!isPasswordValid) {
+      // Log failed password change attempt
+      const ip =
+        req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+        req.headers.get('x-real-ip') ||
+        req.headers.get('cf-connecting-ip') ||
+        '0.0.0.0'
+      const userAgent = req.headers.get('user-agent') || 'unknown'
+
+      void auditLogService.logActivity({
+        userId: user.id,
+        action: 'PASSWORD_CHANGE_FAILED',
+        metadata: {
+          reason: 'Current password incorrect',
+        },
+        ipAddress: ip,
+        userAgent,
+      })
+
       return NextResponse.json(
         { error: 'Current password is incorrect' },
         { status: 400 }
@@ -70,6 +90,25 @@ async function changePassword(req: AuthenticatedRequest) {
 
     // Update password using repository (this will set lastPasswordChange)
     await UserRepository.updatePassword(user.id, newPasswordHash)
+
+    // Extract IP and user agent from request
+    const ip =
+      req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+      req.headers.get('x-real-ip') ||
+      req.headers.get('cf-connecting-ip') ||
+      '0.0.0.0'
+    const userAgent = req.headers.get('user-agent') || 'unknown'
+
+    // Log password change activity
+    void auditLogService.logActivity({
+      userId: user.id,
+      action: 'PASSWORD_CHANGED',
+      metadata: {
+        method: 'authenticated_change',
+      },
+      ipAddress: ip,
+      userAgent,
+    })
 
     // Refresh the current session to include the new lastPasswordChange timestamp
     // This keeps the current session alive while invalidating all other sessions

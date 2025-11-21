@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { createTRPCRouter, adminProcedure } from '~/server/api/trpc'
 import { adminService } from '~/server/services/AdminService'
+import { analyticsService } from '~/server/services/AnalyticsService'
 import { invalidateCacheKey, invalidateCache } from '~/lib/cache'
 import { TRPCError } from '@trpc/server'
 import { OrderStatus } from '@repo/shared/types'
@@ -28,6 +29,61 @@ export const dashboardRouter = createTRPCRouter({
         message: 'Failed to fetch dashboard metrics',
         cause: error,
       })
+    }
+  }),
+
+  getAnalyticsDashboard: adminProcedure.query(async () => {
+    /**
+     * Returns comprehensive analytics dashboard data.
+     *
+     * ORCHESTRATION NOTE: This endpoint uses the orchestration pattern:
+     * - AnalyticsService combines UserAnalyticsService + RevenueAnalyticsService
+     * - Single method call returns all dashboard data
+     * - Services can also be called individually for specific needs
+     *
+     * CACHING NOTE: This endpoint should be cached with 5-minute TTL
+     * to avoid expensive recalculations on every page refresh.
+     *
+     * PERFORMANCE NOTE: Why are these calls separated?
+     * - getComprehensiveDashboard() internally uses Promise.all for KPIs/churn
+     * - Growth trends and top customers are fetched separately
+     * - This allows the comprehensive call to complete first (smaller dataset)
+     * - Then fetch larger datasets (trend data) in parallel
+     *
+     * ALTERNATIVE (More efficient - all parallel):
+     * const [kpis, userGrowth, revenueGrowth, topCustomers, churn] = await Promise.all([
+     *   userAnalyticsService.getDashboardSummary(),
+     *   analyticsService.getUserGrowth(),
+     *   analyticsService.getRevenueGrowth(),
+     *   analyticsService.getTopCustomers(10),
+     *   userAnalyticsService.getChurnAnalysis(),
+     * ]);
+     *
+     * Trade-off: Current approach is easier to read (uses orchestration service),
+     * but slightly less performant. For production, consider the alternative.
+     */
+
+    // Use the orchestration service to get comprehensive dashboard data
+    // const dashboardData = await analyticsService.getComprehensiveDashboard()
+
+    // Fetch additional data in parallel
+    // NOTE: We fetch churnRisk separately to get enriched data with totalSpent and riskScore
+    const [userGrowth, revenueGrowth, topCustomers, churnRisk, dashboardData] =
+      await Promise.all([
+        analyticsService.getUserGrowth(),
+        analyticsService.getRevenueGrowth(),
+        analyticsService.getTopCustomers(10),
+        analyticsService.getChurnRiskUsers(20), // Uses enriched version with spending + risk score
+        analyticsService.getComprehensiveDashboard(),
+      ])
+
+    return {
+      kpis: dashboardData.kpis,
+      userGrowth,
+      revenueGrowth,
+      churnRisk, // Already enriched with totalSpent and riskScore
+      topCustomers,
+      generatedAt: new Date(),
     }
   }),
 

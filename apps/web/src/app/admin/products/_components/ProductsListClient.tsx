@@ -212,6 +212,7 @@ export function ProductsListClient({
       <div className="flex flex-col sm:flex-row items-start gap-2 sm:gap-4 w-full sm:w-auto">
         {/* Search */}
         <Input
+          type="search"
           placeholder="Search products..."
           value={search}
           onChange={(e) => handleSearchChange(e.target.value)}

@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { createTRPCRouter, protectedProcedure, adminProcedure } from '../trpc'
 import { prisma } from '~/lib/prisma'
 import { Role } from '@repo/shared/types'
+import { auditLogService } from '../../services/AuditLogService'
 
 export const userRouter = createTRPCRouter({
   // Get current user profile (protected)
@@ -44,6 +45,16 @@ export const userRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { name, email } = input
 
+      // Get current user data for comparison (before changes)
+      const currentUser = await prisma.user.findUnique({
+        where: { id: ctx.user.id },
+        select: { name: true, email: true },
+      })
+
+      if (!currentUser) {
+        throw new Error('User not found')
+      }
+
       // Check if email is already taken (if changing email)
       if (email && email !== ctx.user.email) {
         const existingUser = await prisma.user.findUnique({
@@ -52,6 +63,24 @@ export const userRouter = createTRPCRouter({
 
         if (existingUser) {
           throw new Error('Email address is already in use')
+        }
+      }
+
+      // Track what changed for logging
+      const changes: string[] = []
+      const changeDetails: Record<string, { old: string | null; new: string }> =
+        {}
+
+      if (name !== undefined && name !== currentUser.name) {
+        changes.push('name')
+        changeDetails.name = { old: currentUser.name, new: name }
+      }
+
+      if (email !== undefined && email.toLowerCase() !== currentUser.email) {
+        changes.push('email')
+        changeDetails.email = {
+          old: currentUser.email,
+          new: email.toLowerCase(),
         }
       }
 
@@ -70,8 +99,55 @@ export const userRouter = createTRPCRouter({
         },
       })
 
+      // Log profile update activity (async, non-blocking)
+      if (changes.length > 0) {
+        void auditLogService.logActivity({
+          userId: ctx.user.id,
+          action: 'PROFILE_UPDATED',
+          metadata: {
+            fields: changes,
+            changes: changeDetails,
+          },
+          ipAddress: ctx.ip,
+          userAgent: ctx.userAgent,
+        })
+      }
+
       return updatedUser
     }),
+
+  /**
+   * Update user preferences (theme)
+   */
+  updatePreferences: protectedProcedure
+    .input(
+      z.object({
+        theme: z.enum(['LIGHT', 'DARK', 'SYSTEM']),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const { theme } = input
+      const userId = ctx.session.user.id
+
+      await prisma.user.update({
+        where: { id: userId },
+        data: { theme },
+      })
+
+      return { success: true, theme }
+    }),
+
+  /**
+   * Get user preferences
+   */
+  getPreferences: protectedProcedure.query(async ({ ctx }) => {
+    const user = await prisma.user.findUnique({
+      where: { id: ctx.session.user.id },
+      select: { theme: true },
+    })
+
+    return { theme: user?.theme || 'SYSTEM' }
+  }),
 
   // Get user's order history (protected)
   getOrderHistory: protectedProcedure

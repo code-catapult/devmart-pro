@@ -6,6 +6,7 @@ import { useState } from 'react'
 import { api } from '~/utils/api'
 import { StoreProvider } from '~/store/StoreProvider'
 import { SessionProvider } from '~/components/SessionProvider'
+import { ThemeProvider } from '~/components/theme-provider'
 import superjson from 'superjson'
 
 function getBaseUrl() {
@@ -30,9 +31,16 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
   return (
     <api.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
-        <SessionProvider>
-          <StoreProvider>{children}</StoreProvider>
-        </SessionProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange={false}
+        >
+          <SessionProvider>
+            <StoreProvider>{children}</StoreProvider>
+          </SessionProvider>
+        </ThemeProvider>
       </QueryClientProvider>
     </api.Provider>
   )
