@@ -1,6 +1,6 @@
 # DevMart Pro - Modern E-Commerce Platform
 
-A comprehensive full-stack e-commerce platform built with Next.js 14, demonstrating enterprise-grade architecture patterns, modern development workflows, and production-ready implementations.
+A comprehensive full-stack e-commerce platform built with Next.js 15, demonstrating enterprise-grade architecture patterns, modern development workflows, and production-ready implementations.
 
 ## 🚀 Project Overview
 
@@ -31,7 +31,7 @@ DevMart Pro is a complete e-commerce solution showcasing the integration of cutt
 
 ### **Frontend**
 
-- **Next.js 14** - React framework with App Router for optimal performance
+- **Next.js 15** - React framework with App Router for optimal performance
 - **TypeScript 5.2+** - Type-safe development across the entire stack
 - **Tailwind CSS 3.3+** - Utility-first CSS framework for rapid UI development
 - **Radix UI + shadcn/ui** - Accessible, customizable component library
