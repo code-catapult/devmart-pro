@@ -1,6 +1,6 @@
 {
   "name": "devmart-pro",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "description": "DevMart Pro - E-commerce Learning Platform",
   "workspaces": [
