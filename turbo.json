@@ -1,10 +1,52 @@
 {
   "$schema": "https://turborepo.com/schema.json",
   "globalDependencies": ["**/.env.*local"],
+  "globalEnv": [
+    "DATABASE_URL",
+    "NEXTAUTH_SECRET",
+    "NEXTAUTH_URL",
+    "STRIPE_SECRET_KEY",
+    "STRIPE_WEBHOOK_SECRET",
+    "AWS_ACCESS_KEY_ID",
+    "AWS_SECRET_ACCESS_KEY",
+    "AWS_REGION",
+    "AWS_S3_BUCKET",
+    "AWS_S3_CDN_URL",
+    "AWS_EMAIL_FROM",
+    "RESEND_EMAIL_FROM",
+    "EMAIL_FROM",
+    "UPSTASH_REDIS_REST_URL",
+    "UPSTASH_REDIS_REST_TOKEN",
+    "ENABLE_CACHE",
+    "MAX_IMAGE_SIZE_MB",
+    "MAX_IMAGES_PER_PRODUCT",
+    "UPLOAD_ALLOWED_TYPES"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"],
+      "env": [
+        "DATABASE_URL",
+        "NEXTAUTH_SECRET",
+        "NEXTAUTH_URL",
+        "STRIPE_SECRET_KEY",
+        "STRIPE_WEBHOOK_SECRET",
+        "AWS_ACCESS_KEY_ID",
+        "AWS_SECRET_ACCESS_KEY",
+        "AWS_REGION",
+        "AWS_S3_BUCKET",
+        "AWS_S3_CDN_URL",
+        "AWS_EMAIL_FROM",
+        "RESEND_EMAIL_FROM",
+        "EMAIL_FROM",
+        "UPSTASH_REDIS_REST_URL",
+        "UPSTASH_REDIS_REST_TOKEN",
+        "ENABLE_CACHE",
+        "MAX_IMAGE_SIZE_MB",
+        "MAX_IMAGES_PER_PRODUCT",
+        "UPLOAD_ALLOWED_TYPES"
+      ]
     },
     "dev": {
       "cache": false,
