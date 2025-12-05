@@ -8,15 +8,24 @@ import { AddToCartSection } from '~/components/product/add-to-cart-section'
 import { RelatedProducts } from '~/components/product/related-products'
 
 // Generate static params for SSG (optional but recommended)
+// Disabled during build to avoid database dependency
+// Enable this after database is set up for better performance
 export async function generateStaticParams() {
-  const caller = await staticApi()
+  // Skip static generation during build if database is not available
+  if (!process.env.DATABASE_URL) {
+    return []
+  }
 
-  // Generate static pages for all active products
-  const products = await caller.products.getAll({ page: 1, limit: 100 })
-
-  return products.products.map((product) => ({
-    slug: product.slug,
-  }))
+  try {
+    const caller = await staticApi()
+    const products = await caller.products.getAll({ page: 1, limit: 100 })
+    return products.products.map((product) => ({
+      slug: product.slug,
+    }))
+  } catch (error) {
+    console.warn('Failed to generate static params, skipping:', error)
+    return []
+  }
 }
 
 // Generate metadata for SEO
