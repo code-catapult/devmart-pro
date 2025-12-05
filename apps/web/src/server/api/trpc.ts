@@ -1,0 +1,122 @@
+import { initTRPC, TRPCError } from '@trpc/server'
+import { getServerSession } from 'next-auth/next'
+import { type FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch'
+import { authOptions } from '~/lib/auth'
+import { prisma } from '~/lib/prisma'
+import { Role } from '@repo/shared/types'
+import { z, ZodError } from 'zod'
+import superjson from 'superjson'
+
+/**
+ * 1. CONTEXT
+ * This section defines the "context" that is available in all tRPC procedures.
+ * The context is data that all of your tRPC procedures will have access to.
+ */
+export const createTRPCContext = async (opts: FetchCreateContextFnOptions) => {
+  // Get the session from NextAuth (App Router)
+  const session = await getServerSession(authOptions)
+
+  // Extract IP address and user agent from request headers
+  const headers = opts.req.headers
+
+  // Try multiple headers for IP (common proxy headers)
+  const ip =
+    headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    headers.get('x-real-ip') ||
+    headers.get('cf-connecting-ip') || // Cloudflare
+    'unknown'
+
+  const userAgent = headers.get('user-agent') || 'unknown'
+
+  return {
+    session,
+    user: session?.user || null, // User is null if not authenticated
+    prisma,
+    // Request metadata for audit logging
+    ip,
+    userAgent,
+  }
+}
+
+/**
+ * 2. INITIALIZATION
+ * This is where the tRPC API is initialized, connecting the context and transformer.
+ */
+const t = initTRPC.context<typeof createTRPCContext>().create({
+  transformer: superjson,
+  errorFormatter({ shape, error }) {
+    return {
+      ...shape,
+      data: {
+        ...shape.data,
+        zodError:
+          error.cause instanceof ZodError ? z.treeifyError(error.cause) : null,
+      },
+    }
+  },
+})
+
+/**
+ * 3. ROUTER & PROCEDURE (THE IMPORTANT BIT)
+ *
+ * These are the pieces you use to build your tRPC API. You should import these a lot in the
+ * "/src/server/api/routers" directory.
+ */
+
+/**
+ * This is how you create new routers and sub-routers in your tRPC API.
+ */
+export const createTRPCRouter = t.router
+
+/**
+ * Create a server-side caller for testing purposes
+ */
+export const createCallerFactory = t.createCallerFactory
+
+/**
+ * Public (unauthenticated) procedure
+ *
+ * This is the base piece you use to build new queries and mutations on your tRPC API. It does not
+ * guarantee that a user querying is authorized, but you can still access user session data if they
+ * are logged in.
+ */
+export const publicProcedure = t.procedure
+
+/**
+ * Protected (authenticated) procedure
+ *
+ * If you want a query or mutation to ONLY be accessible to logged in users, use this. It verifies
+ * the session is valid and guarantees `ctx.session.user` is not null.
+ */
+export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
+  if (!ctx.session || !ctx.user) {
+    throw new TRPCError({
+      code: 'UNAUTHORIZED',
+      message: 'You must be logged in to access this resource',
+    })
+  }
+  return next({
+    ctx: {
+      ...ctx,
+      // Type-safe context with authenticated user
+      session: ctx.session,
+      user: ctx.user,
+    },
+  })
+})
+
+// Admin procedure (admin role required)
+export const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
+  if (ctx.user.role !== Role.ADMIN) {
+    throw new TRPCError({
+      code: 'FORBIDDEN',
+      message: 'Admin access required',
+    })
+  }
+  return next({
+    ctx: {
+      ...ctx,
+      user: ctx.user, // User is guaranteed to be admin
+    },
+  })
+})

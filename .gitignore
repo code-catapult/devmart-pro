@@ -13,6 +13,7 @@ build/
 # Environment variables
 .env
 .env.local
+.env.*.local
 .env.development.local
 .env.test.local
 .env.production.local
@@ -45,3 +46,41 @@ coverage/
 .cache/
 .parcel-cache/
 .turbo/
+
+# Docker volumes
+postgres_data/
+redis_data/
+
+# Database files
+*.db
+*.sqlite
+
+# Ignore TypeScript build info
+*.tsbuildinfo
+
+# Coding agents
+.claude
+
+# Miscellaneous
+project-optimizations.md
+orderadminservice-updates.md
+refundservice-updates.md
+sku-migration-strategy.md
+BACKFILL-TROUBLESHOOTING.md
+diagnose-sku-issues.ts
+backfill-skus.ts
+state-machine-update.md
+SECURITY_PATTERNS.md
+MAINTAINABLE-DESIGN-PATTERNS.md
+api-service-techniques.md
+task-driven-development.md
+orders-status-dialog.md
+ip-useragent-tracking.md
+client-server-fetching-setup.md
+ssr-vs-csr-guide.md
+service-interface-guidelines.md
+usememo-usecase.md
+analytics-dashboard-context.md
+user-analytics-dashboard-caching.md
+user-management-bulk-actions.md
+test-database-setup.md
