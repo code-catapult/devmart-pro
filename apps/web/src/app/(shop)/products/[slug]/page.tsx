@@ -7,9 +7,11 @@ import { ProductInfo } from '~/components/product/product-info'
 import { AddToCartSection } from '~/components/product/add-to-cart-section'
 import { RelatedProducts } from '~/components/product/related-products'
 
+// Enable dynamic rendering for product pages
+export const dynamic = 'force-dynamic'
+export const dynamicParams = true
+
 // Generate static params for SSG (optional but recommended)
-// Disabled during build to avoid database dependency
-// Enable this after database is set up for better performance
 export async function generateStaticParams() {
   // Skip static generation during build if database is not available
   if (!process.env.DATABASE_URL) {
