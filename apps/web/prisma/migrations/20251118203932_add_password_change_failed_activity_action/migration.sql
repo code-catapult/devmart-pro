@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "ActivityAction" ADD VALUE 'PASSWORD_CHANGED_FAILED';
