@@ -1,6 +1,6 @@
 {
   "name": "devmart-pro",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "description": "DevMart Pro - E-commerce Learning Platform",
   "workspaces": [
@@ -39,6 +39,7 @@
   },
   "packageManager": "npm@10.0.0",
   "dependencies": {
-    "dotenv": "^17.2.3"
+    "dotenv": "^17.2.3",
+    "next": "^15.5.7"
   }
 }
